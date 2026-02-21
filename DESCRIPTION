@@ -1,11 +1,21 @@
-Package: tvRMST
+Package: tvrmst
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: Time-Varying RMST from Survival Matrices (Model-Agnostic)
+Version: 0.0.1
+Authors@R: c(
+  person("Imad", "EL BADISY", role = c("aut", "cre"),
+         email = "your@email.com"))
+Description: Matrix-only utilities for RMST and time-varying RMST quantities
+  computed from survival curves provided on a time grid. Model-agnostic accepts
+  only time vector and survival matrices, returning RMST-based quantities and
+  bootstrap summaries.
+License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+  stats
+Suggests:
+  ggplot2,
+  testthat (>= 3.0.0)
+Config/testthat/edition: 3
