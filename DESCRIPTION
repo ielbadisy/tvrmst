@@ -1,11 +1,11 @@
 Package: tvrmst
 Type: Package
-Title: Time-Varying RMST from Survival Matrices (Model-Agnostic)
-Version: 0.0.1
+Title: Time-Varying RMST from Survival Matrices
+Version: 0.0.5
 Authors@R: c(
   person("Imad", "EL BADISY", role = c("aut", "cre"),
-         email = "your@email.com"))
-Description: Matrix-only utilities for RMST and time-varying RMST quantities
+         email = "elbadisyimad@gmail.com"))
+Description: Utilities for RMST and time-varying RMST quantities
   computed from survival curves provided on a time grid. Model-agnostic accepts
   only time vector and survival matrices, returning RMST-based quantities and
   bootstrap summaries.
