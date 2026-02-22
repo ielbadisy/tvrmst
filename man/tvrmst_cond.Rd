@@ -23,3 +23,9 @@ data.frame(s, <series...>)
 \description{
 Conditional tvRMST mu_c(s, tau) = \eqn{(1 / S(s)) \int_s^{s+\tau} S(u)\,du}
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+s_grid <- c(0, 1, 2)
+tvrmst_cond(t, S, s_grid, tau = 2)
+}

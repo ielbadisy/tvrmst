@@ -6,6 +6,12 @@
 #' @param s_grid Nonnegative landmark grid.
 #' @param tau Positive window length.
 #' @return data.frame(s, <series...>)
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+#' s_grid <- c(0, 1, 2)
+#' rmst_window(t, S1, S0, s_grid, tau = 2)
 #' @export
 rmst_window <- function(t, S1, S0, s_grid, tau) {
   .check_survmat(t, S1, "S1"); .check_survmat(t, S0, "S0")
@@ -44,6 +50,11 @@ rmst_window <- function(t, S1, S0, s_grid, tau) {
 #' @param tau Positive window length.
 #' @param eps Stability threshold: require S(s) >= eps.
 #' @return data.frame(s, <series...>)
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' s_grid <- c(0, 1, 2)
+#' tvrmst_cond(t, S, s_grid, tau = 2)
 #' @export
 tvrmst_cond <- function(t, S, s_grid, tau, eps = 0.05) {
   .check_survmat(t, S, "S")
@@ -89,6 +100,12 @@ tvrmst_cond <- function(t, S, s_grid, tau, eps = 0.05) {
 #' @param tau Window length.
 #' @param eps Stability threshold.
 #' @return data.frame(s, delta_c) if single series, else data.frame(s, <series...>)
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+#' s_grid <- c(0, 1, 2)
+#' tvrmst_diff(t, S1, S0, s_grid, tau = 2)
 #' @export
 tvrmst_diff <- function(t, S1, S0, s_grid, tau, eps = 0.05) {
   .check_survmat(t, S1, "S1"); .check_survmat(t, S0, "S0")

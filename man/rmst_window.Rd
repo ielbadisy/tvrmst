@@ -23,3 +23,10 @@ data.frame(s, <series...>)
 \description{
 Window RMST difference W(s, tau) = \eqn{\int_s^{s+\tau} (S_1 - S_0)\,du}
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+s_grid <- c(0, 1, 2)
+rmst_window(t, S1, S0, s_grid, tau = 2)
+}

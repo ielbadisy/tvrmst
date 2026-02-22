@@ -25,3 +25,10 @@ data.frame(s, delta_c) if single series, else data.frame(s, <series...>)
 \description{
 Conditional tvRMST difference Delta_c(s, tau) = mu_c1(s, tau) - mu_c0(s, tau)
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+s_grid <- c(0, 1, 2)
+tvrmst_diff(t, S1, S0, s_grid, tau = 2)
+}
