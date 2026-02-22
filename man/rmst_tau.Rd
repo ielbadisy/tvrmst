@@ -19,3 +19,8 @@ Numeric vector of length ncol(S).
 \description{
 RMST(tau) = \eqn{\int_0^\tau S(u)\,du} computed by trapezoid rule on the grid.
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+rmst_tau(t, S, tau = 3)
+}

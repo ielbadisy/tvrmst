@@ -17,3 +17,8 @@ data.frame with column tau (including 0) and one column per series.
 \description{
 Returns RMST values for each series at every grid time, including tau = 0.
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+rmst_dynamic(t, S)
+}

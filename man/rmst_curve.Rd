@@ -17,3 +17,8 @@ data.frame with column tau and one column per series.
 \description{
 Returns a data.frame with tau and RMST(tau) for each series column.
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+rmst_curve(t, S)
+}

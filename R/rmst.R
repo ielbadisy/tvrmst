@@ -6,6 +6,10 @@
 #' @param S Survival matrix (n_time x n_series).
 #' @param tau Nonnegative scalar horizon.
 #' @return Numeric vector of length ncol(S).
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' rmst_tau(t, S, tau = 3)
 #' @export
 rmst_tau <- function(t, S, tau) {
   .check_survmat(t, S, "S")
@@ -40,6 +44,10 @@ rmst_tau <- function(t, S, tau) {
 #' @param t Numeric time grid.
 #' @param S Survival matrix (n_time x n_series).
 #' @return data.frame with column tau and one column per series.
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' rmst_curve(t, S)
 #' @export
 rmst_curve <- function(t, S) {
   .check_survmat(t, S, "S")
@@ -59,6 +67,10 @@ rmst_curve <- function(t, S) {
 #' @param t Numeric time grid.
 #' @param S Survival matrix (n_time x n_series).
 #' @return data.frame with column tau (including 0) and one column per series.
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' rmst_dynamic(t, S)
 #' @export
 rmst_dynamic <- function(t, S) {
   .check_survmat(t, S, "S")
@@ -77,6 +89,12 @@ rmst_dynamic <- function(t, S) {
 #' @param arm1 Column name for arm 1.
 #' @param arm0 Column name for arm 0.
 #' @return data.frame(tau, delta)
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S0 <- exp(-0.2 * t)
+#' S1 <- exp(-0.15 * t)
+#' rc <- rmst_curve(t, cbind(Control = S0, Treatment = S1))
+#' rmst_delta_curve(rc, "Treatment", "Control")
 #' @export
 rmst_delta_curve <- function(rmst_curve_df, arm1, arm0) {
   if (!is.data.frame(rmst_curve_df) || !"tau" %in% names(rmst_curve_df)) {

@@ -19,3 +19,10 @@ data.frame(tau, delta)
 \description{
 Delta RMST curve between two arms in an rmst_curve() output
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S0 <- exp(-0.2 * t)
+S1 <- exp(-0.15 * t)
+rc <- rmst_curve(t, cbind(Control = S0, Treatment = S1))
+rmst_delta_curve(rc, "Treatment", "Control")
+}
