@@ -1,11 +1,15 @@
 ^\.git$
+^\.gitignore$
 ^\.Rproj\.user$
 ^.*\.Rproj$
 ^\.\.Rcheck$
 ^tvrmst\.Rcheck$
+^\.RData$
+^\.Rhistory$
 ^README_files$
 ^README\.html$
 ^README\.Rmd$
+^LICENSE\.md$
 ^tvrmst_full_example\.R$
 ^tvrmst_methods_report\.qmd$
 ^tests/testthat/\.Rhistory$

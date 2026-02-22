@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+..Rcheck
+README.html
+README_files/
