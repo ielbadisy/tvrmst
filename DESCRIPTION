@@ -1,10 +1,9 @@
 Package: tvrmst
 Type: Package
 Title: Time-Varying RMST from Survival Matrices
-Version: 0.0.5
-Authors@R: c(
-  person("Imad", "EL BADISY", role = c("aut", "cre"),
-         email = "elbadisyimad@gmail.com"))
+Version: 0.0.6
+Author: Imad EL BADISY [aut, cre]
+Maintainer: Imad EL BADISY <elbadisyimad@gmail.com>
 Description: Utilities for RMST and time-varying RMST quantities
   computed from survival curves provided on a time grid. Model-agnostic accepts
   only time vector and survival matrices, returning RMST-based quantities and
@@ -12,10 +11,11 @@ Description: Utilities for RMST and time-varying RMST quantities
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports:
   stats
 Suggests:
   ggplot2,
-  testthat (>= 3.0.0)
+  testthat (>= 3.0.0),
+  roxygen2 (>= 7.0.0)
 Config/testthat/edition: 3

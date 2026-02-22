@@ -1,6 +1,6 @@
 #' RMST at a single horizon tau
 #'
-#' RMST(tau) = \int_0^tau S(u) du computed by trapezoid rule on the grid.
+#' RMST(tau) = \eqn{\int_0^\tau S(u)\,du} computed by trapezoid rule on the grid.
 #'
 #' @param t Numeric time grid (length n_time).
 #' @param S Survival matrix (n_time x n_series).
@@ -33,7 +33,7 @@ rmst_tau <- function(t, S, tau) {
   out
 }
 
-#' RMST curve evaluated at tau = t[-1]
+#' RMST curve evaluated at tau = `t[-1]`
 #'
 #' Returns a data.frame with tau and RMST(tau) for each series column.
 #'
@@ -48,6 +48,25 @@ rmst_curve <- function(t, S) {
 
   rmst_mat <- .cumtrapz_cols(t, S)          # length(t)-1 x ncol(S)
   out <- data.frame(tau = t[-1], rmst_mat, check.names = FALSE)
+  if (!is.null(colnames(S))) names(out)[-1] <- colnames(S)
+  out
+}
+
+#' Individual (dynamic) RMST curves aligned to the time grid
+#'
+#' Returns RMST values for each series at every grid time, including tau = 0.
+#'
+#' @param t Numeric time grid.
+#' @param S Survival matrix (n_time x n_series).
+#' @return data.frame with column tau (including 0) and one column per series.
+#' @export
+rmst_dynamic <- function(t, S) {
+  .check_survmat(t, S, "S")
+  ss <- .sort_survmat(t, S); t <- ss$t; S <- ss$S
+  ez <- .extend_to_zero(t, S); t <- ez$t; S <- ez$S
+
+  rmst_mat <- rbind(rep(0, ncol(S)), .cumtrapz_cols(t, S))
+  out <- data.frame(tau = t, rmst_mat, check.names = FALSE)
   if (!is.null(colnames(S))) names(out)[-1] <- colnames(S)
   out
 }

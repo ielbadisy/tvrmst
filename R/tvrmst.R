@@ -1,4 +1,4 @@
-#' Window RMST difference W(s, tau) = \int_s^{s+tau} (S1 - S0) du
+#' Window RMST difference W(s, tau) = \eqn{\int_s^{s+\tau} (S_1 - S_0)\,du}
 #'
 #' @param t Time grid.
 #' @param S1 Survival matrix (n_time x n_series) for arm 1.
@@ -36,7 +36,7 @@ rmst_window <- function(t, S1, S0, s_grid, tau) {
   data.frame(s = s_grid, mat, check.names = FALSE)
 }
 
-#' Conditional tvRMST mu_c(s, tau) = (1 / S(s)) * \int_s^{s+tau} S(u) du
+#' Conditional tvRMST mu_c(s, tau) = \eqn{(1 / S(s)) \int_s^{s+\tau} S(u)\,du}
 #'
 #' @param t Time grid.
 #' @param S Survival matrix (n_time x n_series).

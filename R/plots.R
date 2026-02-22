@@ -1,4 +1,10 @@
 #' Plot two survival curves (first column only) as ggplot
+#'
+#' @param t Time grid.
+#' @param S0 Survival matrix for control arm.
+#' @param S1 Survival matrix for treatment arm.
+#' @param labels Character vector of length 2 for legend labels.
+#' @param title Plot title.
 #' @export
 plot_survival_curves <- function(t, S0, S1, labels = c("Control","Treatment"),
                                  title = "Survival curves") {
@@ -20,6 +26,12 @@ plot_survival_curves <- function(t, S0, S1, labels = c("Control","Treatment"),
 }
 
 #' Plot conditional tvRMST curves for two arms (first series by default)
+#'
+#' @param mu0_df Output of `tvrmst_cond()` for arm 0.
+#' @param mu1_df Output of `tvrmst_cond()` for arm 1.
+#' @param labels Character vector of length 2 for legend labels.
+#' @param series_col Optional column name to plot.
+#' @param title Plot title.
 #' @export
 plot_tvrmst <- function(mu0_df, mu1_df, labels = c("Control","Treatment"),
                         series_col = NULL,
@@ -54,6 +66,10 @@ plot_tvrmst <- function(mu0_df, mu1_df, labels = c("Control","Treatment"),
 }
 
 #' Plot Delta_c(s,tau) with optional CI (estimate/lower/upper)
+#'
+#' @param delta_df Output of `tvrmst_diff()` or a data.frame with columns
+#'   `s`, `estimate`, `lower`, `upper`.
+#' @param title Plot title.
 #' @export
 plot_tvrmst_diff <- function(delta_df, title = "Delta_c(s,tau)") {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -74,4 +90,130 @@ plot_tvrmst_diff <- function(delta_df, title = "Delta_c(s,tau)") {
       ggplot2::theme_minimal() +
       ggplot2::labs(title = title, x = "Landmark time s", y = "Delta_c(s,tau)")
   }
+}
+
+#' Plot RMST curves over tau for multiple series
+#'
+#' @param rmst_curve_df Output of `rmst_curve()`.
+#' @param title Plot title.
+#' @export
+plot_rmst_curve <- function(rmst_curve_df, title = "RMST curve") {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    .stop("ggplot2 is required for plotting. Install it or avoid plot_*().")
+  }
+  if (!is.data.frame(rmst_curve_df) || !"tau" %in% names(rmst_curve_df)) {
+    .stop("`rmst_curve_df` must come from rmst_curve().")
+  }
+  series <- setdiff(names(rmst_curve_df), "tau")
+  if (length(series) < 1) .stop("No series columns in rmst_curve_df.")
+
+  df <- do.call(
+    rbind,
+    lapply(series, function(s) {
+      data.frame(tau = rmst_curve_df$tau, value = rmst_curve_df[[s]], series = s)
+    })
+  )
+
+  ggplot2::ggplot(df, ggplot2::aes(.data$tau, .data$value, color = .data$series)) +
+    ggplot2::geom_line(linewidth = 1) +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Horizon tau", y = "RMST(tau)")
+}
+
+#' Plot Delta RMST curve over tau
+#'
+#' @param rmst_delta_df Output of `rmst_delta_curve()`.
+#' @param title Plot title.
+#' @export
+plot_rmst_delta <- function(rmst_delta_df, title = "Delta RMST curve") {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    .stop("ggplot2 is required for plotting. Install it or avoid plot_*().")
+  }
+  if (!is.data.frame(rmst_delta_df) || !"tau" %in% names(rmst_delta_df) || !"delta" %in% names(rmst_delta_df)) {
+    .stop("`rmst_delta_df` must come from rmst_delta_curve().")
+  }
+
+  ggplot2::ggplot(rmst_delta_df, ggplot2::aes(.data$tau, .data$delta)) +
+    ggplot2::geom_line(linewidth = 1) +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Horizon tau", y = "Delta RMST(tau)")
+}
+
+#' Plot individual dynamic RMST curves with optional grouping
+#'
+#' @param rmst_dynamic_df Output of `rmst_dynamic()`.
+#' @param group Optional vector of group labels (length = number of series).
+#' @param alpha Line transparency for individual curves.
+#' @param title Plot title.
+#' @export
+plot_rmst_individual <- function(rmst_dynamic_df, group = NULL, alpha = 0.15,
+                                 title = "Individual RMST curves") {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    .stop("ggplot2 is required for plotting. Install it or avoid plot_*().")
+  }
+  if (!is.data.frame(rmst_dynamic_df) || !"tau" %in% names(rmst_dynamic_df)) {
+    .stop("`rmst_dynamic_df` must come from rmst_dynamic().")
+  }
+  series <- setdiff(names(rmst_dynamic_df), "tau")
+  if (length(series) < 1) .stop("No series columns in rmst_dynamic_df.")
+  if (!is.null(group) && length(group) != length(series)) {
+    .stop("`group` must be NULL or have length equal to number of series.")
+  }
+
+  df <- do.call(
+    rbind,
+    lapply(seq_along(series), function(i) {
+      data.frame(
+        tau = rmst_dynamic_df$tau,
+        rmst = rmst_dynamic_df[[series[i]]],
+        id = series[i],
+        group = if (is.null(group)) "All" else as.character(group[i])
+      )
+    })
+  )
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(.data$tau, .data$rmst, group = .data$id)) +
+    ggplot2::geom_line(alpha = alpha) +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Horizon tau", y = "RMST(tau)")
+
+  if (!is.null(group)) p <- p + ggplot2::facet_wrap(~ group)
+  p
+}
+
+#' Plot mean dynamic RMST curves by group
+#'
+#' @param rmst_dynamic_df Output of `rmst_dynamic()`.
+#' @param group Group labels (length = number of series).
+#' @param title Plot title.
+#' @export
+plot_rmst_mean <- function(rmst_dynamic_df, group, title = "Mean RMST by group") {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    .stop("ggplot2 is required for plotting. Install it or avoid plot_*().")
+  }
+  if (!is.data.frame(rmst_dynamic_df) || !"tau" %in% names(rmst_dynamic_df)) {
+    .stop("`rmst_dynamic_df` must come from rmst_dynamic().")
+  }
+  series <- setdiff(names(rmst_dynamic_df), "tau")
+  if (length(series) < 1) .stop("No series columns in rmst_dynamic_df.")
+  if (missing(group) || length(group) != length(series)) {
+    .stop("`group` must be provided and have length equal to number of series.")
+  }
+
+  df <- do.call(
+    rbind,
+    lapply(seq_along(series), function(i) {
+      data.frame(
+        tau = rmst_dynamic_df$tau,
+        rmst = rmst_dynamic_df[[series[i]]],
+        group = as.character(group[i])
+      )
+    })
+  )
+
+  ggplot2::ggplot(df, ggplot2::aes(.data$tau, .data$rmst, group = .data$group)) +
+    ggplot2::stat_summary(fun = mean, geom = "line") +
+    ggplot2::facet_wrap(~ group) +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Horizon tau", y = "RMST(tau)")
 }
