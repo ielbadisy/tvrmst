@@ -25,3 +25,15 @@ data.frame(s, estimate, lower, upper)
 \description{
 Summarize Delta_c(s, tau) from a list of replicate survival matrices
 }
+\examples{
+set.seed(1)
+t <- seq(0, 5, by = 1)
+s_grid <- c(0, 1, 2)
+reps <- lapply(1:10, function(i) {
+  list(
+    S1 = cbind(A = exp(-(0.15 + runif(1, -0.02, 0.02)) * t)),
+    S0 = cbind(A = exp(-(0.20 + runif(1, -0.02, 0.02)) * t))
+  )
+})
+bootstrap_tvrmst_diff_reps(t, reps, s_grid, tau = 2, conf = 0.9)
+}

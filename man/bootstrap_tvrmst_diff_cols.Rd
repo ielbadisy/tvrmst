@@ -41,3 +41,11 @@ data.frame(s, estimate, lower, upper)
 \description{
 Bootstrap Delta_c(s, tau) by resampling columns (units) within each arm
 }
+\examples{
+set.seed(1)
+t <- seq(0, 5, by = 1)
+s_grid <- c(0, 1, 2)
+S0_units <- sapply(1:6, function(i) exp(-(0.20 + runif(1, -0.02, 0.02)) * t))
+S1_units <- sapply(1:6, function(i) exp(-(0.15 + runif(1, -0.02, 0.02)) * t))
+bootstrap_tvrmst_diff_cols(t, S1_units, S0_units, s_grid, tau = 2, R = 20, conf = 0.9)
+}

@@ -10,6 +10,13 @@
 #' @param conf Confidence level
 #' @param statistic Aggregator across units: "mean" or "median"
 #' @return data.frame(s, estimate, lower, upper)
+#' @examples
+#' set.seed(1)
+#' t <- seq(0, 5, by = 1)
+#' s_grid <- c(0, 1, 2)
+#' S0_units <- sapply(1:6, function(i) exp(-(0.20 + runif(1, -0.02, 0.02)) * t))
+#' S1_units <- sapply(1:6, function(i) exp(-(0.15 + runif(1, -0.02, 0.02)) * t))
+#' bootstrap_tvrmst_diff_cols(t, S1_units, S0_units, s_grid, tau = 2, R = 20, conf = 0.9)
 #' @export
 bootstrap_tvrmst_diff_cols <- function(t, S1_units, S0_units, s_grid, tau,
                                        R = 500, eps = 0.05, conf = 0.95,
@@ -56,6 +63,17 @@ bootstrap_tvrmst_diff_cols <- function(t, S1_units, S0_units, s_grid, tau,
 #' @param eps Stability threshold
 #' @param conf Confidence level
 #' @return data.frame(s, estimate, lower, upper)
+#' @examples
+#' set.seed(1)
+#' t <- seq(0, 5, by = 1)
+#' s_grid <- c(0, 1, 2)
+#' reps <- lapply(1:10, function(i) {
+#'   list(
+#'     S1 = cbind(A = exp(-(0.15 + runif(1, -0.02, 0.02)) * t)),
+#'     S0 = cbind(A = exp(-(0.20 + runif(1, -0.02, 0.02)) * t))
+#'   )
+#' })
+#' bootstrap_tvrmst_diff_reps(t, reps, s_grid, tau = 2, conf = 0.9)
 #' @export
 bootstrap_tvrmst_diff_reps <- function(t, reps, s_grid, tau, eps = 0.05, conf = 0.95) {
   if (!is.list(reps) || length(reps) < 10) .stop("`reps` must be a list of >= 10 replicates.")
