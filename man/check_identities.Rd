@@ -23,3 +23,9 @@ data.frame(series, max_abs_error)
 \description{
 Checks: mu(s+tau) - mu(s) = S(s) * mu_c(s,tau)
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+s_grid <- c(0, 1, 2)
+check_identities(t, S, s_grid, tau = 2)
+}

@@ -8,6 +8,11 @@
 #' @param tau Window length
 #' @param eps Stability threshold for mu_c
 #' @return data.frame(series, max_abs_error)
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' s_grid <- c(0, 1, 2)
+#' check_identities(t, S, s_grid, tau = 2)
 #' @export
 check_identities <- function(t, S, s_grid, tau, eps = 0.05) {
   .check_survmat(t, S, "S")
