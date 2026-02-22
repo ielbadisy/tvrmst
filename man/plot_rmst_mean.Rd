@@ -16,3 +16,11 @@ plot_rmst_mean(rmst_dynamic_df, group, title = "Mean RMST by group")
 \description{
 Plot mean dynamic RMST curves by group
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
+rd <- rmst_dynamic(t, S)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot_rmst_mean(rd, group = c("G1", "G2", "G1"))
+}
+}

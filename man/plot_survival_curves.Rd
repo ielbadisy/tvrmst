@@ -26,3 +26,11 @@ plot_survival_curves(
 \description{
 Plot two survival curves (first column only) as ggplot
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S0 <- cbind(A = exp(-0.2 * t))
+S1 <- cbind(A = exp(-0.15 * t))
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot_survival_curves(t, S0, S1)
+}
+}

@@ -14,3 +14,13 @@ plot_rmst_delta(rmst_delta_df, title = "Delta RMST curve")
 \description{
 Plot Delta RMST curve over tau
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S0 <- exp(-0.2 * t)
+S1 <- exp(-0.15 * t)
+rc <- rmst_curve(t, cbind(Control = S0, Treatment = S1))
+dr <- rmst_delta_curve(rc, "Treatment", "Control")
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot_rmst_delta(dr)
+}
+}

@@ -14,3 +14,11 @@ plot_rmst_curve(rmst_curve_df, title = "RMST curve")
 \description{
 Plot RMST curves over tau for multiple series
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+rc <- rmst_curve(t, S)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot_rmst_curve(rc)
+}
+}

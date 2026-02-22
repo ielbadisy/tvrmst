@@ -5,6 +5,13 @@
 #' @param S1 Survival matrix for treatment arm.
 #' @param labels Character vector of length 2 for legend labels.
 #' @param title Plot title.
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S0 <- cbind(A = exp(-0.2 * t))
+#' S1 <- cbind(A = exp(-0.15 * t))
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   plot_survival_curves(t, S0, S1)
+#' }
 #' @export
 plot_survival_curves <- function(t, S0, S1, labels = c("Control","Treatment"),
                                  title = "Survival curves") {
@@ -32,6 +39,16 @@ plot_survival_curves <- function(t, S0, S1, labels = c("Control","Treatment"),
 #' @param labels Character vector of length 2 for legend labels.
 #' @param series_col Optional column name to plot.
 #' @param title Plot title.
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+#' s_grid <- c(0, 1, 2)
+#' mu0 <- tvrmst_cond(t, S0, s_grid, tau = 2)
+#' mu1 <- tvrmst_cond(t, S1, s_grid, tau = 2)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   plot_tvrmst(mu0, mu1, series_col = "A")
+#' }
 #' @export
 plot_tvrmst <- function(mu0_df, mu1_df, labels = c("Control","Treatment"),
                         series_col = NULL,
@@ -70,6 +87,15 @@ plot_tvrmst <- function(mu0_df, mu1_df, labels = c("Control","Treatment"),
 #' @param delta_df Output of `tvrmst_diff()` or a data.frame with columns
 #'   `s`, `estimate`, `lower`, `upper`.
 #' @param title Plot title.
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+#' s_grid <- c(0, 1, 2)
+#' delta <- tvrmst_diff(t, S1, S0, s_grid, tau = 2)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   plot_tvrmst_diff(delta)
+#' }
 #' @export
 plot_tvrmst_diff <- function(delta_df, title = "Delta_c(s,tau)") {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -96,6 +122,13 @@ plot_tvrmst_diff <- function(delta_df, title = "Delta_c(s,tau)") {
 #'
 #' @param rmst_curve_df Output of `rmst_curve()`.
 #' @param title Plot title.
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' rc <- rmst_curve(t, S)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   plot_rmst_curve(rc)
+#' }
 #' @export
 plot_rmst_curve <- function(rmst_curve_df, title = "RMST curve") {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -124,6 +157,15 @@ plot_rmst_curve <- function(rmst_curve_df, title = "RMST curve") {
 #'
 #' @param rmst_delta_df Output of `rmst_delta_curve()`.
 #' @param title Plot title.
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S0 <- exp(-0.2 * t)
+#' S1 <- exp(-0.15 * t)
+#' rc <- rmst_curve(t, cbind(Control = S0, Treatment = S1))
+#' dr <- rmst_delta_curve(rc, "Treatment", "Control")
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   plot_rmst_delta(dr)
+#' }
 #' @export
 plot_rmst_delta <- function(rmst_delta_df, title = "Delta RMST curve") {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -145,6 +187,13 @@ plot_rmst_delta <- function(rmst_delta_df, title = "Delta RMST curve") {
 #' @param group Optional vector of group labels (length = number of series).
 #' @param alpha Line transparency for individual curves.
 #' @param title Plot title.
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
+#' rd <- rmst_dynamic(t, S)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   plot_rmst_individual(rd, group = c("G1", "G2", "G1"))
+#' }
 #' @export
 plot_rmst_individual <- function(rmst_dynamic_df, group = NULL, alpha = 0.15,
                                  title = "Individual RMST curves") {
@@ -186,6 +235,13 @@ plot_rmst_individual <- function(rmst_dynamic_df, group = NULL, alpha = 0.15,
 #' @param rmst_dynamic_df Output of `rmst_dynamic()`.
 #' @param group Group labels (length = number of series).
 #' @param title Plot title.
+#' @examples
+#' t <- seq(0, 5, by = 1)
+#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
+#' rd <- rmst_dynamic(t, S)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   plot_rmst_mean(rd, group = c("G1", "G2", "G1"))
+#' }
 #' @export
 plot_rmst_mean <- function(rmst_dynamic_df, group, title = "Mean RMST by group") {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {

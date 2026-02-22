@@ -15,3 +15,13 @@ plot_tvrmst_diff(delta_df, title = "Delta_c(s,tau)")
 \description{
 Plot Delta_c(s,tau) with optional CI (estimate/lower/upper)
 }
+\examples{
+t <- seq(0, 5, by = 1)
+S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+s_grid <- c(0, 1, 2)
+delta <- tvrmst_diff(t, S1, S0, s_grid, tau = 2)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot_tvrmst_diff(delta)
+}
+}
