@@ -10,4 +10,8 @@ Model-agnostic utilities for RMST and time-varying RMST quantities computed
 from survival curves provided on a time grid. Functions accept a time vector
 and survival matrices, returning RMST-based quantities and bootstrap summaries.
 }
+\author{
+\strong{Maintainer}: Imad EL BADISY \email{elbadisyimad@gmail.com}
+
+}
 \keyword{internal}
