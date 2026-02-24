@@ -1,142 +1,511 @@
 
 # tvrmst
 
-Time-varying RMST from survival curves on a time grid. The package is
-model-agnostic: you provide a time vector and survival matrices, and it
-returns RMST-based quantities and bootstrap summaries.
+## Time-Varying Restricted Mean Survival Time from Survival Matrices
 
-## Installation
+`tvrmst` provides **model-agnostic** utilities to compute **restricted
+mean survival time (RMST)** and **time-varying / conditional RMST**
+**directly from survival curves on a time grid**.
 
-From a local checkout:
+Unlike model-specific toolkits, `tvrmst` operates on a simple interface:
+
+- a time grid `time` (numeric, strictly increasing)
+- a survival object `S`:
+  - numeric matrix or data.frame
+  - **rows = individuals (units)**, **columns = time points**
+  - **require** `ncol(S) == length(time)`
+
+This learner-agnostic input works for:
+
+- Kaplan–Meier curves,
+- Cox / parametric model predictions,
+- deep survival models (e.g. `survdnn`),
+- any estimator that outputs survival probabilities on a grid.
+
+------------------------------------------------------------------------
+
+# 1. From RMST to Time-Varying RMST
+
+## 1.1 Classical RMST
+
+For a survival function $S(t)$, the **restricted mean survival time** up
+to horizon $\tau$ is the area under the survival curve:
+
+$RMST(\tau) = \int_0^{\tau} S(u)\,du$
+
+Interpretation:
+
+> Expected survival time accumulated up to tau (in the same units as
+> time).
+
+This provides an interpretable alternative to hazard ratios, especially
+under **non-proportional hazards**, delayed effects, or crossing
+survival curves.
+
+------------------------------------------------------------------------
+
+## 1.2 RMST difference curve
+
+For two arms (1 vs 0):
+
+$\Delta(\tau)=\mathrm{RMST}_1(\tau)-\mathrm{RMST}_0(\tau)$
+
+Evaluating Delta(tau) over a range of horizons reveals time-dependent
+patterns such as:
+
+- early harm then late benefit,
+- delayed separation,
+- sign changes when curves cross.
+
+------------------------------------------------------------------------
+
+## 1.3 Window RMST contrast
+
+To localize the effect within a window $[s, s+\tau]$:
+
+$W(s,\tau)=\int_s^{s+\tau} \left(S_1(u)-S_0(u)\right)\,du$
+
+------------------------------------------------------------------------
+
+## 1.4 Conditional (landmark) tvRMST
+
+Conditioning on being alive at time $s$:
+
+$\mu_c(s,\tau) = \int_0^{\tau} \frac{S(s+u)}{S(s)}\,du$
+
+Treatment contrast:
+
+$\Delta_c(s,\tau)=\mu_{c,1}(s,\tau)-\mu_{c,0}(s,\tau)$
+
+Interpretation:
+
+> Expected additional survival time in the next tau units given survival
+> up to landmark time s.
+
+------------------------------------------------------------------------
+
+# 2. Installation
+
+CRAN version (once available):
 
 ``` r
-# in R
-install.packages("tvrmst", repos = NULL, type = "source")
+install.packages("tvrmst")
 ```
 
-## Quick start
+Development version:
 
 ``` r
-library(tvrmst)
-
-# time grid
-t <- seq(0, 10, by = 1)
-
-# survival matrices (n_time x n_series)
-S0 <- cbind(exp(-0.20 * t))
-S1 <- cbind(exp(-0.15 * t))
-
-# RMST at a horizon
-rmst_tau(t, S0, tau = 5)
-
-# RMST curve
-rmst_curve(t, S0)
-
-# conditional tvRMST by landmark time
-s_grid <- seq(0, 8, by = 1)
-mu0 <- tvrmst_cond(t, S0, s_grid, tau = 2)
-mu1 <- tvrmst_cond(t, S1, s_grid, tau = 2)
-
-# difference in conditional tvRMST
-delta <- tvrmst_diff(t, S1, S0, s_grid, tau = 2)
-
-# bootstrap confidence intervals (columns are units)
-S0_units <- cbind(exp(-0.20 * t), exp(-0.22 * t), exp(-0.18 * t), exp(-0.21 * t), exp(-0.19 * t))
-S1_units <- cbind(exp(-0.15 * t), exp(-0.16 * t), exp(-0.14 * t), exp(-0.155 * t), exp(-0.145 * t))
-boot <- bootstrap_tvrmst_diff_cols(t, S1_units, S0_units, s_grid, tau = 2, R = 200)
+# install.packages("remotes")
+remotes::install_github("ielbadisy/tvrmst")
 ```
 
-## Functions (progressive guide)
+------------------------------------------------------------------------
 
-This section walks through the full API from core inputs to plotting.
+# 3. Input Interface
 
-### 1) Inputs
+All compute functions use the same strict interface:
 
-All functions use a time grid `t` and survival matrices `S` with
-dimension `n_time x n_series`. Each column is a series (arm, group, or
-unit).
+- `time`: numeric vector, length `n_time`, strictly increasing
+- `S`: numeric matrix or data.frame, `n_units × n_time`
+
+**Required invariant:** `ncol(S) == length(time)` (columns correspond to
+`time`).
+
+## 3.1 Legacy orientation (optional)
+
+If you have a legacy object where **rows are time** (time × series), use
+`as_unit_time()` to convert explicitly:
 
 ``` r
-t <- seq(0, 10, by = 1)
-S0 <- cbind(Control = exp(-0.20 * t))
-S1 <- cbind(Treatment = exp(-0.15 * t))
+S_fixed <- as_unit_time(S_legacy, time, by = "rows")
 ```
 
-### 2) Classical RMST
+No automatic transposition is performed inside compute functions.
 
-`rmst_tau()` gives RMST at a single horizon.  
-`rmst_curve()` evaluates RMST along the grid.  
-`rmst_dynamic()` returns RMST at every grid time (including 0) for each
-series.  
-`rmst_delta_curve()` is the difference between two series in an
-`rmst_curve()` output.
+------------------------------------------------------------------------
 
-``` r
-rmst_tau(t, S0, tau = 5)
+# 4. Minimal API (concise)
 
-rc <- rmst_curve(t, S0)
-rd <- rmst_dynamic(t, S0)
+| Quantity                               | Function                       | Output         |
+|----------------------------------------|--------------------------------|----------------|
+| RMST at fixed tau                      | `rmst_tau()`                   | numeric vector |
+| RMST curve (tau -\> RMST(tau))         | `rmst_curve()`                 | data.frame     |
+| Delta RMST curve (Delta(tau))          | `rmst_delta_curve()`           | data.frame     |
+| Window contrast W(s, tau)              | `rmst_window()`                | data.frame     |
+| Conditional tvRMST mu_c(s, tau)        | `tvrmst_cond()`                | data.frame     |
+| Conditional difference Delta_c(s, tau) | `tvrmst_diff()`                | data.frame     |
+| Bootstrap CI (units / rows)            | `bootstrap_tvrmst_diff_cols()` | data.frame     |
+| Bootstrap CI (KM replicates)           | `bootstrap_tvrmst_diff_reps()` | data.frame     |
 
-rc2 <- rmst_curve(t, cbind(Control = S0[, 1], Treatment = S1[, 1]))
-rmst_delta_curve(rc2, "Treatment", "Control")
-```
+Plot helpers (require `ggplot2`):
 
-### 3) Windowed and time‑varying RMST
+- `plot_survival_curves()`
+- `plot_rmst_curve()`
+- `plot_rmst_delta()`
+- `plot_tvrmst()`
+- `plot_tvrmst_diff()`
 
-`rmst_window()` computes a windowed RMST difference on landmarks.  
-`tvrmst_cond()` computes conditional tvRMST for each series.  
-`tvrmst_diff()` computes the difference in conditional tvRMST between
-two arms.
+------------------------------------------------------------------------
 
-``` r
-s_grid <- seq(0, 8, by = 1)
+# 5. Example 1 — Kaplan–Meier (non-PH illustration)
 
-rmst_window(t, S1, S0, s_grid, tau = 2)
+This example simulates **early harm then late benefit**, illustrating
+why a single RMST horizon can be misleading.
 
-mu0 <- tvrmst_cond(t, S0, s_grid, tau = 2)
-mu1 <- tvrmst_cond(t, S1, s_grid, tau = 2)
-delta <- tvrmst_diff(t, S1, S0, s_grid, tau = 2)
-```
-
-### 4) Bootstrap confidence intervals
-
-`bootstrap_tvrmst_diff_cols()` bootstraps by resampling columns
-(units).  
-`bootstrap_tvrmst_diff_reps()` aggregates a list of replicate survival
-matrices.
+## Step 1 — Simulate a non-PH trial
 
 ``` r
-S0_units <- cbind(exp(-0.20 * t), exp(-0.22 * t), exp(-0.18 * t), exp(-0.21 * t), exp(-0.19 * t))
-S1_units <- cbind(exp(-0.15 * t), exp(-0.16 * t), exp(-0.14 * t), exp(-0.155 * t), exp(-0.145 * t))
-bootstrap_tvrmst_diff_cols(t, S1_units, S0_units, s_grid, tau = 2, R = 200)
+library(survival)
 
-reps <- lapply(1:10, function(i) {
-  list(
-    S1 = cbind(exp(-(0.15 + runif(1, -0.02, 0.02)) * t)),
-    S0 = cbind(exp(-(0.20 + runif(1, -0.02, 0.02)) * t))
+if (requireNamespace("pkgload", quietly = TRUE)) {
+  pkgload::load_all(".")
+} else if (requireNamespace("devtools", quietly = TRUE)) {
+  devtools::load_all(".")
+} else {
+  library(tvrmst)
+}
+#> ℹ Loading tvrmst
+
+set.seed(20260223)
+
+lambda0 <- 0.085
+t_switch <- 6
+lambda1_early <- 0.13
+lambda1_late  <- 0.02
+
+r_piecewise_exp <- function(n, t_switch, lam_early, lam_late) {
+  u <- runif(n)
+  H <- -log(u)
+  Hs <- lam_early * t_switch
+  ifelse(H <= Hs,
+         H / lam_early,
+         t_switch + (H - Hs) / lam_late)
+}
+
+simulate_trial <- function(n_per_arm = 350) {
+  T0 <- rexp(n_per_arm, rate = lambda0)
+  T1 <- r_piecewise_exp(n_per_arm, t_switch, lambda1_early, lambda1_late)
+
+  C0 <- runif(n_per_arm, 0, 30)
+  C1 <- runif(n_per_arm, 0, 30)
+
+  rbind(
+    data.frame(arm="Control",
+               time=pmin(T0, C0),
+               status=as.integer(T0 <= C0)),
+    data.frame(arm="Treatment",
+               time=pmin(T1, C1),
+               status=as.integer(T1 <= C1))
   )
-})
-bootstrap_tvrmst_diff_reps(t, reps, s_grid, tau = 2)
+}
+
+df <- simulate_trial()
 ```
 
-### 5) Identity checks
-
-`check_identities()` validates key numerical identities for correctness.
+## Step 2 — KM survival on a common time grid
 
 ``` r
-check_identities(t, S0, s_grid, tau = 2)
+t_grid <- seq(0, 24, by = 0.25)
+
+km_on_grid <- function(time, status, t_grid) {
+  fit <- survfit(Surv(time, status) ~ 1)
+  summary(fit, times = t_grid, extend = TRUE)$surv
+}
+
+S0 <- km_on_grid(df$time[df$arm=="Control"],
+                 df$status[df$arm=="Control"], t_grid)
+
+S1 <- km_on_grid(df$time[df$arm=="Treatment"],
+                 df$status[df$arm=="Treatment"], t_grid)
+
+S0_mat <- rbind(Control   = S0)
+S1_mat <- rbind(Treatment = S1)
+S_both <- rbind(Control = S0, Treatment = S1)
 ```
 
-### 6) Plot helpers (requires ggplot2)
+## Step 3 — RMST at two horizons
+
+``` r
+rmst_tau(S_both, t_grid, tau = 8)
+#>   Control Treatment 
+#>  5.866526  4.949922
+rmst_tau(S_both, t_grid, tau = 20)
+#>   Control Treatment 
+#>  9.624757  9.565580
+
+# two-arm comparison at a fixed horizon
+rmst_8 <- rmst_tau(S_both, t_grid, tau = 8)
+delta_8 <- unname(rmst_8["Treatment"] - rmst_8["Control"])
+delta_8
+#> [1] -0.9166044
+```
+
+## Step 4 — RMST curve and delta curve
+
+``` r
+rc <- rmst_curve(S_both, t_grid)
+dr <- rmst_delta_curve(rc, arm1 = "Treatment", arm0 = "Control")
+```
+
+## Step 5 — Conditional tvRMST difference (\_c(s,))
+
+``` r
+s_grid <- seq(0, 18, by = 1)
+tau_win <- 6
+
+delta_c <- tvrmst_diff(
+  S1 = S1_mat,
+  S0 = S0_mat,
+  time = t_grid,
+  s_grid = s_grid,
+  tau = tau_win
+)
+```
+
+## Step 6 — Plots
 
 ``` r
 if (requireNamespace("ggplot2", quietly = TRUE)) {
-  plot_survival_curves(t, S0, S1)
-  plot_rmst_curve(rc)
-  plot_rmst_delta(rmst_delta_curve(rc2, "Treatment", "Control"))
-  plot_rmst_individual(rd)
-  plot_rmst_mean(rd, group = rep("All", ncol(S0)))
-  plot_tvrmst(mu0, mu1)
-  plot_tvrmst_diff(delta)
+  plot_survival_curves(
+    S0 = S0_mat,
+    S1 = S1_mat,
+    time = t_grid,
+    labels = c("Control", "Treatment"),
+    title  = "KM survival curves (early harm then late benefit)"
+  )
+
+  plot_rmst_delta(
+    rmst_delta_df = dr,
+    title = "ΔRMST(τ) = RMST_Treatment(τ) − RMST_Control(τ)"
+  )
+
+  plot_tvrmst_diff(
+    delta_df = delta_c,
+    title = paste0("Δc(s, τ) with τ = ", tau_win)
+  )
 }
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+------------------------------------------------------------------------
+
+# 6. Example 2 — Using survdnn predictions (same dataset)
+
+This example shows that `tvrmst` can consume `survdnn` survival
+predictions **directly**.
+
+## Step 1 — Prepare train/test split
+
+``` r
+library(survdnn)
+#> 
+#> Attaching package: 'survdnn'
+#> The following object is masked from 'package:survival':
+#> 
+#>     brier
+
+df$trt <- as.integer(df$arm == "Treatment")
+
+set.seed(123)
+idx_train <- sample(seq_len(nrow(df)), size = floor(0.7 * nrow(df)))
+
+train_data <- df[idx_train, ]
+test_data  <- df[-idx_train, ]
+```
+
+## Step 2 — Fit a simple SurvDNN
+
+``` r
+fit_dnn <- survdnn(
+  Surv(time, status) ~ trt,
+  data = train_data,
+  epochs = 50,
+  verbose = FALSE
+)
+```
+
+## Step 3 — Predict survival curves on the same grid
+
+`survdnn` requires explicit `times` for `type="survival"`.
+
+``` r
+pred_df <- predict(
+  fit_dnn,
+  newdata = test_data,
+  type = "survival",
+  times = t_grid
+)
+```
+
+`pred_df` is a data.frame with rows = individuals and columns = time
+points. `tvrmst` accepts this directly when you pass `time = t_grid`.
+
+## Step 4 — Conditional tvRMST per individual
+
+``` r
+mu_indiv <- tvrmst_cond(
+  S = pred_df,                 # n_units × n_time data.frame
+  time = t_grid,
+  s_grid = seq(0, 12, by = 2),
+  tau = 6
+)
+```
+
+## Step 5 — Aggregate across individuals
+
+``` r
+mu_mean <- rowMeans(mu_indiv[, -1])
+out <- data.frame(s = mu_indiv$s, mean_tvRMST = mu_mean)
+out
+#>    s mean_tvRMST
+#> 1  0    4.561288
+#> 2  2    4.661827
+#> 3  4    4.793178
+#> 4  6    5.198543
+#> 5  8    5.202418
+#> 6 10    5.255358
+#> 7 12    5.273005
+```
+
+## Step 6 — Individualized RMST curves
+
+``` r
+rmst_indiv <- rmst_dynamic(pred_df, t_grid)
+
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot_rmst_individual(rmst_indiv)
+}
+```
+
+![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+------------------------------------------------------------------------
+
+# 7. Bootstrap confidence intervals
+
+## 7.1 Bootstrap from KM replicates (recommended)
+
+Resample individuals within each arm, recompute KM, and propagate
+uncertainty into $\Delta_c(s,\tau)$.
+
+``` r
+B <- 200
+
+ctrl_idx <- which(df$arm == "Control")
+trt_idx  <- which(df$arm == "Treatment")
+
+make_rep <- function() {
+  d0 <- df[sample(ctrl_idx, replace = TRUE), ]
+  d1 <- df[sample(trt_idx,  replace = TRUE), ]
+
+  S0b <- km_on_grid(d0$time, d0$status, t_grid)
+  S1b <- km_on_grid(d1$time, d1$status, t_grid)
+
+  list(
+    S0 = rbind(Control   = S0b),
+    S1 = rbind(Treatment = S1b)
+  )
+}
+
+reps <- lapply(seq_len(B), function(i) make_rep())
+
+boot_reps <- bootstrap_tvrmst_diff_reps(
+  reps = reps,
+  time = t_grid,
+  s_grid = s_grid,
+  tau = tau_win,
+  conf = 0.95
+)
+
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot_tvrmst_diff(
+    delta_df = boot_reps,
+    title = paste0("Bootstrap CI for Δc(s, τ), τ = ", tau_win)
+  )
+}
+```
+
+![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+## 7.2 Bootstrap by rows (units)
+
+If rows represent independent units (e.g. individual predicted curves),
+use `bootstrap_tvrmst_diff_cols()`.
+
+Example using SurvDNN predictions: split individuals by treatment
+indicator in `test_data`.
+
+``` r
+# Split units by group then bootstrap rows.
+
+idx1 <- which(test_data$trt == 1)
+idx0 <- which(test_data$trt == 0)
+
+S_units <- as.matrix(pred_df)         # n_units × n_time
+S1_units <- S_units[idx1, , drop = FALSE]
+S0_units <- S_units[idx0, , drop = FALSE]
+
+boot_cols <- bootstrap_tvrmst_diff_cols(
+  S1_units = S1_units,
+  S0_units = S0_units,
+  time = t_grid,
+  s_grid = s_grid,
+  tau = tau_win,
+  R = 200,
+  conf = 0.95,
+  statistic = "mean"
+)
+
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot_tvrmst_diff(
+    delta_df = boot_cols,
+    title = paste0("Row bootstrap (units) for Delta_c(s, tau), tau = ", tau_win)
+  )
+}
+```
+
+![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+------------------------------------------------------------------------
+
+# 8. Identity check (internal consistency)
+
+`tvrmst` provides an algebraic identity check:
+
+$\mathrm{RMST}(s+\tau)-\mathrm{RMST}(s) = S(s)\,\mu_c(s,\tau)$
+
+``` r
+# check_identities(S, time, s_grid, tau, eps = ...)
+```
+
+------------------------------------------------------------------------
+
+# Citation
+
+If you use `tvrmst`, please cite the package paper (R Journal
+submission):
+
+> EL BADISY, I. (2026). *tvrmst: Time-Varying RMST from Survival
+> Matrices*. The R Journal (submitted).
+
+------------------------------------------------------------------------
+
+# License
+
+MIT.
+
+------------------------------------------------------------------------
+
+## References (conceptual background)
+
+- Royston, P. & Parmar, M. K. B. (2011). RMST as an alternative to the
+  hazard ratio under non-proportional hazards.
+- Huang, B. et al. (2020). RMST-based estimation as interpretable effect
+  size under non-PH.
+- Syriopoulou, E. et al. (2022). Absolute survival contrasts for
+  interpretability.
+- Yang, S. et al. (2021). Dynamic/conditional RMST formulations in
+  landmarking/regression frameworks.
+
+\`\`\`
