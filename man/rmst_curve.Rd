@@ -2,23 +2,23 @@
 % Please edit documentation in R/rmst.R
 \name{rmst_curve}
 \alias{rmst_curve}
-\title{RMST curve evaluated at tau = \code{t[-1]}}
+\title{RMST curve evaluated at tau = \code{time[-1]}}
 \usage{
-rmst_curve(t, S)
+rmst_curve(S, time)
 }
 \arguments{
-\item{t}{Numeric time grid.}
+\item{S}{Survival matrix (n_units x n_time).}
 
-\item{S}{Survival matrix (n_time x n_series).}
+\item{time}{Numeric time grid (length n_time).}
 }
 \value{
-data.frame with column tau and one column per series.
+data.frame with column tau and one column per unit.
 }
 \description{
-Returns a data.frame with tau and RMST(tau) for each series column.
+Returns a data.frame with tau and RMST(tau) for each unit column.
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-rmst_curve(t, S)
+S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+rmst_curve(S, t)
 }

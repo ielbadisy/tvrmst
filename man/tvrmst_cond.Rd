@@ -4,12 +4,12 @@
 \alias{tvrmst_cond}
 \title{Conditional tvRMST mu_c(s, tau) = \eqn{(1 / S(s)) \int_s^{s+\tau} S(u)\,du}}
 \usage{
-tvrmst_cond(t, S, s_grid, tau, eps = 0.05)
+tvrmst_cond(S, time, s_grid, tau, eps = 1e-08)
 }
 \arguments{
-\item{t}{Time grid.}
+\item{S}{Survival matrix (n_units x n_time).}
 
-\item{S}{Survival matrix (n_time x n_series).}
+\item{time}{Time grid.}
 
 \item{s_grid}{Nonnegative landmark grid.}
 
@@ -18,14 +18,14 @@ tvrmst_cond(t, S, s_grid, tau, eps = 0.05)
 \item{eps}{Stability threshold: require S(s) >= eps.}
 }
 \value{
-data.frame(s, <series...>)
+data.frame(s, <unit...>)
 }
 \description{
 Conditional tvRMST mu_c(s, tau) = \eqn{(1 / S(s)) \int_s^{s+\tau} S(u)\,du}
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
 s_grid <- c(0, 1, 2)
-tvrmst_cond(t, S, s_grid, tau = 2)
+tvrmst_cond(S, t, s_grid, tau = 2)
 }

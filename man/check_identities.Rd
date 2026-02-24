@@ -4,12 +4,12 @@
 \alias{check_identities}
 \title{Identity checks for correctness}
 \usage{
-check_identities(t, S, s_grid, tau, eps = 0.05)
+check_identities(S, time, s_grid, tau, eps = 1e-08)
 }
 \arguments{
-\item{t}{Time grid}
+\item{S}{Survival matrix (n_units x n_time)}
 
-\item{S}{Survival matrix}
+\item{time}{Time grid}
 
 \item{s_grid}{Landmark grid}
 
@@ -25,7 +25,7 @@ Checks: mu(s+tau) - mu(s) = S(s) * mu_c(s,tau)
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
 s_grid <- c(0, 1, 2)
-check_identities(t, S, s_grid, tau = 2)
+check_identities(S, t, s_grid, tau = 2)
 }

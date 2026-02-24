@@ -18,8 +18,8 @@ Plot mean dynamic RMST curves by group
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
-rd <- rmst_dynamic(t, S)
+S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
+rd <- rmst_dynamic(S, t)
 if (requireNamespace("ggplot2", quietly = TRUE)) {
   plot_rmst_mean(rd, group = c("G1", "G2", "G1"))
 }

@@ -13,3 +13,4 @@
 ^tvrmst_full_example\.R$
 ^tvrmst_methods_report\.qmd$
 ^tests/testthat/\.Rhistory$
+^figure$

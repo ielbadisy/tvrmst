@@ -4,12 +4,12 @@
 \alias{bootstrap_tvrmst_diff_reps}
 \title{Summarize Delta_c(s, tau) from a list of replicate survival matrices}
 \usage{
-bootstrap_tvrmst_diff_reps(t, reps, s_grid, tau, eps = 0.05, conf = 0.95)
+bootstrap_tvrmst_diff_reps(reps, time, s_grid, tau, eps = 1e-08, conf = 0.95)
 }
 \arguments{
-\item{t}{Time grid}
-
 \item{reps}{List of length R, each element list(S1=..., S0=...)}
+
+\item{time}{Time grid}
 
 \item{s_grid}{Landmark grid}
 
@@ -31,9 +31,9 @@ t <- seq(0, 5, by = 1)
 s_grid <- c(0, 1, 2)
 reps <- lapply(1:10, function(i) {
   list(
-    S1 = cbind(A = exp(-(0.15 + runif(1, -0.02, 0.02)) * t)),
-    S0 = cbind(A = exp(-(0.20 + runif(1, -0.02, 0.02)) * t))
+    S1 = matrix(exp(-(0.15 + runif(1, -0.02, 0.02)) * t), nrow = 1),
+    S0 = matrix(exp(-(0.20 + runif(1, -0.02, 0.02)) * t), nrow = 1)
   )
 })
-bootstrap_tvrmst_diff_reps(t, reps, s_grid, tau = 2, conf = 0.9)
+bootstrap_tvrmst_diff_reps(reps, t, s_grid, tau = 2, conf = 0.9)
 }

@@ -4,23 +4,23 @@
 \alias{rmst_tau}
 \title{RMST at a single horizon tau}
 \usage{
-rmst_tau(t, S, tau)
+rmst_tau(S, time, tau)
 }
 \arguments{
-\item{t}{Numeric time grid (length n_time).}
+\item{S}{Survival matrix (n_units x n_time).}
 
-\item{S}{Survival matrix (n_time x n_series).}
+\item{time}{Numeric time grid (length n_time).}
 
 \item{tau}{Nonnegative scalar horizon.}
 }
 \value{
-Numeric vector of length ncol(S).
+Numeric vector of length nrow(S).
 }
 \description{
 RMST(tau) = \eqn{\int_0^\tau S(u)\,du} computed by trapezoid rule on the grid.
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-rmst_tau(t, S, tau = 3)
+S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+rmst_tau(S, t, tau = 3)
 }

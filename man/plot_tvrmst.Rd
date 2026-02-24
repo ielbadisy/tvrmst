@@ -28,11 +28,11 @@ Plot conditional tvRMST curves for two arms (first series by default)
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
 s_grid <- c(0, 1, 2)
-mu0 <- tvrmst_cond(t, S0, s_grid, tau = 2)
-mu1 <- tvrmst_cond(t, S1, s_grid, tau = 2)
+mu0 <- tvrmst_cond(S0, t, s_grid, tau = 2)
+mu1 <- tvrmst_cond(S1, t, s_grid, tau = 2)
 if (requireNamespace("ggplot2", quietly = TRUE)) {
   plot_tvrmst(mu0, mu1, series_col = "A")
 }

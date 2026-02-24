@@ -4,29 +4,29 @@
 \alias{rmst_window}
 \title{Window RMST difference W(s, tau) = \eqn{\int_s^{s+\tau} (S_1 - S_0)\,du}}
 \usage{
-rmst_window(t, S1, S0, s_grid, tau)
+rmst_window(S1, S0, time, s_grid, tau)
 }
 \arguments{
-\item{t}{Time grid.}
+\item{S1}{Survival matrix (n_units x n_time) for arm 1.}
 
-\item{S1}{Survival matrix (n_time x n_series) for arm 1.}
+\item{S0}{Survival matrix (n_units x n_time) for arm 0.}
 
-\item{S0}{Survival matrix (n_time x n_series) for arm 0.}
+\item{time}{Time grid.}
 
 \item{s_grid}{Nonnegative landmark grid.}
 
 \item{tau}{Positive window length.}
 }
 \value{
-data.frame(s, <series...>)
+data.frame(s, <unit...>)
 }
 \description{
 Window RMST difference W(s, tau) = \eqn{\int_s^{s+\tau} (S_1 - S_0)\,du}
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
 s_grid <- c(0, 1, 2)
-rmst_window(t, S1, S0, s_grid, tau = 2)
+rmst_window(S1, S0, t, s_grid, tau = 2)
 }

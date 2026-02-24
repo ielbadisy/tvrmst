@@ -4,31 +4,42 @@
 \alias{tvrmst_diff}
 \title{Conditional tvRMST difference Delta_c(s, tau) = mu_c1(s, tau) - mu_c0(s, tau)}
 \usage{
-tvrmst_diff(t, S1, S0, s_grid, tau, eps = 0.05)
+tvrmst_diff(
+  S1,
+  S0,
+  time,
+  s_grid,
+  tau,
+  eps = 1e-08,
+  statistic = c("mean", "median", "unit")
+)
 }
 \arguments{
-\item{t}{Time grid.}
-
 \item{S1}{Survival matrix for arm 1.}
 
 \item{S0}{Survival matrix for arm 0.}
+
+\item{time}{Time grid.}
 
 \item{s_grid}{Landmark grid.}
 
 \item{tau}{Window length.}
 
 \item{eps}{Stability threshold.}
+
+\item{statistic}{Aggregation: "mean", "median", or "unit".}
 }
 \value{
-data.frame(s, delta_c) if single series, else data.frame(s, <series...>)
+data.frame(s, estimate) for statistic != "unit";
+data.frame(s, <unit...>) for statistic = "unit".
 }
 \description{
 Conditional tvRMST difference Delta_c(s, tau) = mu_c1(s, tau) - mu_c0(s, tau)
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
 s_grid <- c(0, 1, 2)
-tvrmst_diff(t, S1, S0, s_grid, tau = 2)
+tvrmst_diff(S1, S0, t, s_grid, tau = 2)
 }

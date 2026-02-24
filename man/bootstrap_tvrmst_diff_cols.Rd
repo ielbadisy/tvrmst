@@ -2,26 +2,26 @@
 % Please edit documentation in R/bootstrap.R
 \name{bootstrap_tvrmst_diff_cols}
 \alias{bootstrap_tvrmst_diff_cols}
-\title{Bootstrap Delta_c(s, tau) by resampling columns (units) within each arm}
+\title{Bootstrap Delta_c(s, tau) by resampling rows (units) within each arm}
 \usage{
 bootstrap_tvrmst_diff_cols(
-  t,
   S1_units,
   S0_units,
+  time,
   s_grid,
   tau,
   R = 500,
-  eps = 0.05,
+  eps = 1e-08,
   conf = 0.95,
   statistic = c("mean", "median")
 )
 }
 \arguments{
-\item{t}{Time grid}
+\item{S1_units}{n_units x n_time survival curves for treatment units}
 
-\item{S1_units}{n_time x n_units survival curves for treatment units}
+\item{S0_units}{n_units x n_time survival curves for control units}
 
-\item{S0_units}{n_time x n_units survival curves for control units}
+\item{time}{Time grid}
 
 \item{s_grid}{Landmark grid}
 
@@ -39,13 +39,13 @@ bootstrap_tvrmst_diff_cols(
 data.frame(s, estimate, lower, upper)
 }
 \description{
-Bootstrap Delta_c(s, tau) by resampling columns (units) within each arm
+Bootstrap Delta_c(s, tau) by resampling rows (units) within each arm
 }
 \examples{
 set.seed(1)
 t <- seq(0, 5, by = 1)
 s_grid <- c(0, 1, 2)
-S0_units <- sapply(1:6, function(i) exp(-(0.20 + runif(1, -0.02, 0.02)) * t))
-S1_units <- sapply(1:6, function(i) exp(-(0.15 + runif(1, -0.02, 0.02)) * t))
-bootstrap_tvrmst_diff_cols(t, S1_units, S0_units, s_grid, tau = 2, R = 20, conf = 0.9)
+S0_units <- t(sapply(1:6, function(i) exp(-(0.20 + runif(1, -0.02, 0.02)) * t)))
+S1_units <- t(sapply(1:6, function(i) exp(-(0.15 + runif(1, -0.02, 0.02)) * t)))
+bootstrap_tvrmst_diff_cols(S1_units, S0_units, t, s_grid, tau = 2, R = 20, conf = 0.9)
 }

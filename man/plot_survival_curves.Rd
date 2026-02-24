@@ -5,19 +5,19 @@
 \title{Plot two survival curves (first column only) as ggplot}
 \usage{
 plot_survival_curves(
-  t,
   S0,
   S1,
+  time,
   labels = c("Control", "Treatment"),
   title = "Survival curves"
 )
 }
 \arguments{
-\item{t}{Time grid.}
+\item{S0}{Survival matrix (n_units x n_time) for control arm.}
 
-\item{S0}{Survival matrix for control arm.}
+\item{S1}{Survival matrix (n_units x n_time) for treatment arm.}
 
-\item{S1}{Survival matrix for treatment arm.}
+\item{time}{Time grid.}
 
 \item{labels}{Character vector of length 2 for legend labels.}
 
@@ -28,9 +28,9 @@ Plot two survival curves (first column only) as ggplot
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S0 <- cbind(A = exp(-0.2 * t))
-S1 <- cbind(A = exp(-0.15 * t))
+S0 <- rbind(A = exp(-0.2 * t))
+S1 <- rbind(A = exp(-0.15 * t))
 if (requireNamespace("ggplot2", quietly = TRUE)) {
-  plot_survival_curves(t, S0, S1)
+  plot_survival_curves(S0, S1, t)
 }
 }

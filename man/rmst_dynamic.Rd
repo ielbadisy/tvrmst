@@ -4,21 +4,21 @@
 \alias{rmst_dynamic}
 \title{Individual (dynamic) RMST curves aligned to the time grid}
 \usage{
-rmst_dynamic(t, S)
+rmst_dynamic(S, time)
 }
 \arguments{
-\item{t}{Numeric time grid.}
+\item{S}{Survival matrix (n_units x n_time).}
 
-\item{S}{Survival matrix (n_time x n_series).}
+\item{time}{Numeric time grid (length n_time).}
 }
 \value{
-data.frame with column tau (including 0) and one column per series.
+data.frame with column tau (including 0) and one column per unit.
 }
 \description{
-Returns RMST values for each series at every grid time, including tau = 0.
+Returns RMST values for each unit at every grid time, including tau = 0.
 }
 \examples{
 t <- seq(0, 5, by = 1)
-S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-rmst_dynamic(t, S)
+S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+rmst_dynamic(S, t)
 }
