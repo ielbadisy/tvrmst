@@ -2,45 +2,40 @@
 #'
 #' Checks: mu(s+tau) - mu(s) = S(s) * mu_c(s,tau)
 #'
-#' @param t Time grid
-#' @param S Survival matrix
+#' @param S Survival matrix (n_units x n_time)
+#' @param time Time grid
 #' @param s_grid Landmark grid
 #' @param tau Window length
 #' @param eps Stability threshold for mu_c
 #' @return data.frame(series, max_abs_error)
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
 #' s_grid <- c(0, 1, 2)
-#' check_identities(t, S, s_grid, tau = 2)
+#' check_identities(S, t, s_grid, tau = 2)
 #' @export
-check_identities <- function(t, S, s_grid, tau, eps = 0.05) {
-  .check_survmat(t, S, "S")
-  ss <- .sort_survmat(t, S); t <- ss$t; S <- ss$S
-  ez <- .extend_to_zero(t, S); t <- ez$t; S <- ez$S
+check_identities <- function(S, time, s_grid, tau, eps = 1e-8) {
+  S <- .coerce_unit_time(S, time, "S")
+  time <- as.numeric(time)
 
-  rc <- rmst_curve(t, S)
-  series <- setdiff(names(rc), "tau")
+  rd <- rmst_dynamic(S, time)
+  unit_names <- setdiff(names(rd), "tau")
+  mu_mat <- t(as.matrix(rd[, unit_names, drop = FALSE]))
 
-  mu_mat <- rbind(rep(0, length(series)), as.matrix(rc[, series, drop = FALSE]))
+  mu_s <- .surv_at(time, mu_mat, s_grid)
+  mu_s_tau <- .surv_at(time, mu_mat, s_grid + tau)
+  S_s <- .surv_at(time, S, s_grid)
 
-  out <- lapply(seq_along(series), function(j) {
-    Sj <- S[, j, drop = FALSE]
-    muj <- mu_mat[, j, drop = FALSE]
+  muc <- tvrmst_cond(S, time, s_grid, tau, eps = eps)
+  muc_mat <- t(as.matrix(muc[, unit_names, drop = FALSE]))
 
-    mu_at <- function(x) as.numeric(.surv_at(t, muj, x))
-    S_at  <- function(x) as.numeric(.surv_at(t, Sj,  x))
+  lhs <- mu_s_tau - mu_s
+  rhs <- S_s * muc_mat
 
-    muc <- tvrmst_cond(t, Sj, s_grid, tau, eps = eps)[[2]]
+  out <- data.frame(
+    series = unit_names,
+    max_abs_error = apply(abs(lhs - rhs), 1, max, na.rm = TRUE)
+  )
 
-    lhs <- mu_at(s_grid + tau) - mu_at(s_grid)
-    rhs <- S_at(s_grid) * muc
-
-    data.frame(
-      series = series[j],
-      max_abs_error = max(abs(lhs - rhs), na.rm = TRUE)
-    )
-  })
-
-  do.call(rbind, out)
+  out
 }

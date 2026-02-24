@@ -2,84 +2,115 @@
 #'
 #' RMST(tau) = \eqn{\int_0^\tau S(u)\,du} computed by trapezoid rule on the grid.
 #'
-#' @param t Numeric time grid (length n_time).
-#' @param S Survival matrix (n_time x n_series).
+#' @param S Survival matrix (n_units x n_time).
+#' @param time Numeric time grid (length n_time).
 #' @param tau Nonnegative scalar horizon.
-#' @return Numeric vector of length ncol(S).
+#' @return Numeric vector of length nrow(S).
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' rmst_tau(t, S, tau = 3)
+#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' rmst_tau(S, t, tau = 3)
 #' @export
-rmst_tau <- function(t, S, tau) {
-  .check_survmat(t, S, "S")
+rmst_tau <- function(S, time, tau) {
+  S <- .coerce_unit_time(S, time, "S")
   if (!is.numeric(tau) || length(tau) != 1 || !is.finite(tau) || tau < 0) {
     .stop("`tau` must be a single nonnegative number.")
   }
+  time <- as.numeric(time)
+  ez <- .extend_to_zero(time, S); time <- ez$t; S <- ez$S
+  dt <- diff(time)
+  S_left <- S[, -ncol(S), drop = FALSE]
+  S_right <- S[, -1, drop = FALSE]
+  S_mid <- (S_left + S_right) / 2
+  area_incr <- sweep(S_mid, 2, dt, "*")
+  rmst_no0 <- t(apply(area_incr, 1, cumsum))
+  rmst_mat <- cbind(0, rmst_no0)
 
-  ss <- .sort_survmat(t, S); t <- ss$t; S <- ss$S
-  ez <- .extend_to_zero(t, S); t <- ez$t; S <- ez$S
-
-  keep <- t <= tau
-  t0 <- t[keep]
-  S0 <- S[keep, , drop = FALSE]
-
-  if (length(t0) < 2) {
-    # degenerate: tau is before the first provided time > 0
-    out <- rep(tau, ncol(S))
-    names(out) <- colnames(S)
+  if (tau <= time[1]) {
+    out <- rep(tau, nrow(S))
+    if (!is.null(rownames(S))) names(out) <- rownames(S)
     return(out)
   }
 
-  et <- .extend_to_tau(t0, S0, tau)
-  out <- .trapz_cols(et$t, et$S)
-  names(out) <- colnames(S)
+  if (tau >= time[length(time)]) {
+    tau_idx <- length(time)
+  } else {
+    tau_idx <- max(which(time <= tau))
+  }
+
+  out <- rmst_mat[, tau_idx]
+  if (tau > time[tau_idx]) {
+    dt_last <- tau - time[tau_idx]
+    out <- out + S[, tau_idx] * dt_last
+  }
+  if (!is.null(rownames(S))) {
+    names(out) <- rownames(S)
+  } else {
+    names(out) <- paste0("unit", seq_len(nrow(S)))
+  }
   out
 }
 
-#' RMST curve evaluated at tau = `t[-1]`
+#' RMST curve evaluated at tau = `time[-1]`
 #'
-#' Returns a data.frame with tau and RMST(tau) for each series column.
+#' Returns a data.frame with tau and RMST(tau) for each unit column.
 #'
-#' @param t Numeric time grid.
-#' @param S Survival matrix (n_time x n_series).
-#' @return data.frame with column tau and one column per series.
+#' @param S Survival matrix (n_units x n_time).
+#' @param time Numeric time grid (length n_time).
+#' @return data.frame with column tau and one column per unit.
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' rmst_curve(t, S)
+#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' rmst_curve(S, t)
 #' @export
-rmst_curve <- function(t, S) {
-  .check_survmat(t, S, "S")
-  ss <- .sort_survmat(t, S); t <- ss$t; S <- ss$S
-  ez <- .extend_to_zero(t, S); t <- ez$t; S <- ez$S
-
-  rmst_mat <- .cumtrapz_cols(t, S)          # length(t)-1 x ncol(S)
-  out <- data.frame(tau = t[-1], rmst_mat, check.names = FALSE)
-  if (!is.null(colnames(S))) names(out)[-1] <- colnames(S)
+rmst_curve <- function(S, time) {
+  S <- .coerce_unit_time(S, time, "S")
+  time <- as.numeric(time)
+  ez <- .extend_to_zero(time, S); time <- ez$t; S <- ez$S
+  dt <- diff(time)
+  S_left <- S[, -ncol(S), drop = FALSE]
+  S_right <- S[, -1, drop = FALSE]
+  S_mid <- (S_left + S_right) / 2
+  area_incr <- sweep(S_mid, 2, dt, "*")
+  rmst_mat <- t(apply(area_incr, 1, cumsum))
+  out <- data.frame(tau = time[-1], t(rmst_mat), check.names = FALSE)
+  if (!is.null(rownames(S))) {
+    names(out)[-1] <- rownames(S)
+  } else {
+    names(out)[-1] <- paste0("unit", seq_len(nrow(S)))
+  }
   out
 }
 
 #' Individual (dynamic) RMST curves aligned to the time grid
 #'
-#' Returns RMST values for each series at every grid time, including tau = 0.
+#' Returns RMST values for each unit at every grid time, including tau = 0.
 #'
-#' @param t Numeric time grid.
-#' @param S Survival matrix (n_time x n_series).
-#' @return data.frame with column tau (including 0) and one column per series.
+#' @param S Survival matrix (n_units x n_time).
+#' @param time Numeric time grid (length n_time).
+#' @return data.frame with column tau (including 0) and one column per unit.
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' rmst_dynamic(t, S)
+#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' rmst_dynamic(S, t)
 #' @export
-rmst_dynamic <- function(t, S) {
-  .check_survmat(t, S, "S")
-  ss <- .sort_survmat(t, S); t <- ss$t; S <- ss$S
-  ez <- .extend_to_zero(t, S); t <- ez$t; S <- ez$S
-
-  rmst_mat <- rbind(rep(0, ncol(S)), .cumtrapz_cols(t, S))
-  out <- data.frame(tau = t, rmst_mat, check.names = FALSE)
-  if (!is.null(colnames(S))) names(out)[-1] <- colnames(S)
+rmst_dynamic <- function(S, time) {
+  S <- .coerce_unit_time(S, time, "S")
+  time <- as.numeric(time)
+  ez <- .extend_to_zero(time, S); time <- ez$t; S <- ez$S
+  dt <- diff(time)
+  S_left <- S[, -ncol(S), drop = FALSE]
+  S_right <- S[, -1, drop = FALSE]
+  S_mid <- (S_left + S_right) / 2
+  area_incr <- sweep(S_mid, 2, dt, "*")
+  rmst_no0 <- t(apply(area_incr, 1, cumsum))
+  rmst_mat <- cbind(0, rmst_no0)
+  out <- data.frame(tau = time, t(rmst_mat), check.names = FALSE)
+  if (!is.null(rownames(S))) {
+    names(out)[-1] <- rownames(S)
+  } else {
+    names(out)[-1] <- paste0("unit", seq_len(nrow(S)))
+  }
   out
 }
 
@@ -93,7 +124,8 @@ rmst_dynamic <- function(t, S) {
 #' t <- seq(0, 5, by = 1)
 #' S0 <- exp(-0.2 * t)
 #' S1 <- exp(-0.15 * t)
-#' rc <- rmst_curve(t, cbind(Control = S0, Treatment = S1))
+#' S <- rbind(Control = S0, Treatment = S1)
+#' rc <- rmst_curve(S, t)
 #' rmst_delta_curve(rc, "Treatment", "Control")
 #' @export
 rmst_delta_curve <- function(rmst_curve_df, arm1, arm0) {

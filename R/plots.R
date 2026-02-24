@@ -1,30 +1,30 @@
 #' Plot two survival curves (first column only) as ggplot
 #'
-#' @param t Time grid.
-#' @param S0 Survival matrix for control arm.
-#' @param S1 Survival matrix for treatment arm.
+#' @param S0 Survival matrix (n_units x n_time) for control arm.
+#' @param S1 Survival matrix (n_units x n_time) for treatment arm.
+#' @param time Time grid.
 #' @param labels Character vector of length 2 for legend labels.
 #' @param title Plot title.
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S0 <- cbind(A = exp(-0.2 * t))
-#' S1 <- cbind(A = exp(-0.15 * t))
+#' S0 <- rbind(A = exp(-0.2 * t))
+#' S1 <- rbind(A = exp(-0.15 * t))
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
-#'   plot_survival_curves(t, S0, S1)
+#'   plot_survival_curves(S0, S1, t)
 #' }
 #' @export
-plot_survival_curves <- function(t, S0, S1, labels = c("Control","Treatment"),
+plot_survival_curves <- function(S0, S1, time, labels = c("Control","Treatment"),
                                  title = "Survival curves") {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     .stop("ggplot2 is required for plotting. Install it or avoid plot_*().")
   }
-  .check_survmat(t, as.matrix(S0), "S0")
-  .check_survmat(t, as.matrix(S1), "S1")
+  S0 <- .coerce_unit_time(S0, time, "S0")
+  S1 <- .coerce_unit_time(S1, time, "S1")
 
   df <- data.frame(
-    time = rep(t, 2),
-    survival = c(S0[, 1], S1[, 1]),
-    arm = rep(labels, each = length(t))
+    time = rep(time, 2),
+    survival = c(S0[1, ], S1[1, ]),
+    arm = rep(labels, each = length(time))
   )
   ggplot2::ggplot(df, ggplot2::aes(time, survival, color = arm)) +
     ggplot2::geom_line(linewidth = 1) +
@@ -41,11 +41,11 @@ plot_survival_curves <- function(t, S0, S1, labels = c("Control","Treatment"),
 #' @param title Plot title.
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+#' S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
 #' s_grid <- c(0, 1, 2)
-#' mu0 <- tvrmst_cond(t, S0, s_grid, tau = 2)
-#' mu1 <- tvrmst_cond(t, S1, s_grid, tau = 2)
+#' mu0 <- tvrmst_cond(S0, t, s_grid, tau = 2)
+#' mu1 <- tvrmst_cond(S1, t, s_grid, tau = 2)
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
 #'   plot_tvrmst(mu0, mu1, series_col = "A")
 #' }
@@ -62,7 +62,7 @@ plot_tvrmst <- function(mu0_df, mu1_df, labels = c("Control","Treatment"),
 
   cols0 <- setdiff(names(mu0_df), "s")
   cols1 <- setdiff(names(mu1_df), "s")
-  if (length(cols0) < 1 || length(cols1) < 1) .stop("No series columns in tvrmst_cond outputs.")
+  if (length(cols0) < 1 || length(cols1) < 1) .stop("No unit columns in tvrmst_cond outputs.")
 
   if (is.null(series_col)) {
     c0 <- cols0[1]; c1 <- cols1[1]
@@ -89,10 +89,10 @@ plot_tvrmst <- function(mu0_df, mu1_df, labels = c("Control","Treatment"),
 #' @param title Plot title.
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S0 <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' S1 <- cbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
+#' S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
 #' s_grid <- c(0, 1, 2)
-#' delta <- tvrmst_diff(t, S1, S0, s_grid, tau = 2)
+#' delta <- tvrmst_diff(S1, S0, t, s_grid, tau = 2)
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
 #'   plot_tvrmst_diff(delta)
 #' }
@@ -124,8 +124,8 @@ plot_tvrmst_diff <- function(delta_df, title = "Delta_c(s,tau)") {
 #' @param title Plot title.
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' rc <- rmst_curve(t, S)
+#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
+#' rc <- rmst_curve(S, t)
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
 #'   plot_rmst_curve(rc)
 #' }
@@ -138,7 +138,7 @@ plot_rmst_curve <- function(rmst_curve_df, title = "RMST curve") {
     .stop("`rmst_curve_df` must come from rmst_curve().")
   }
   series <- setdiff(names(rmst_curve_df), "tau")
-  if (length(series) < 1) .stop("No series columns in rmst_curve_df.")
+  if (length(series) < 1) .stop("No unit columns in rmst_curve_df.")
 
   df <- do.call(
     rbind,
@@ -161,7 +161,8 @@ plot_rmst_curve <- function(rmst_curve_df, title = "RMST curve") {
 #' t <- seq(0, 5, by = 1)
 #' S0 <- exp(-0.2 * t)
 #' S1 <- exp(-0.15 * t)
-#' rc <- rmst_curve(t, cbind(Control = S0, Treatment = S1))
+#' S <- rbind(Control = S0, Treatment = S1)
+#' rc <- rmst_curve(S, t)
 #' dr <- rmst_delta_curve(rc, "Treatment", "Control")
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
 #'   plot_rmst_delta(dr)
@@ -189,8 +190,8 @@ plot_rmst_delta <- function(rmst_delta_df, title = "Delta RMST curve") {
 #' @param title Plot title.
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
-#' rd <- rmst_dynamic(t, S)
+#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
+#' rd <- rmst_dynamic(S, t)
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
 #'   plot_rmst_individual(rd, group = c("G1", "G2", "G1"))
 #' }
@@ -204,9 +205,9 @@ plot_rmst_individual <- function(rmst_dynamic_df, group = NULL, alpha = 0.15,
     .stop("`rmst_dynamic_df` must come from rmst_dynamic().")
   }
   series <- setdiff(names(rmst_dynamic_df), "tau")
-  if (length(series) < 1) .stop("No series columns in rmst_dynamic_df.")
+  if (length(series) < 1) .stop("No unit columns in rmst_dynamic_df.")
   if (!is.null(group) && length(group) != length(series)) {
-    .stop("`group` must be NULL or have length equal to number of series.")
+    .stop("`group` must be NULL or have length equal to number of units.")
   }
 
   df <- do.call(
@@ -237,8 +238,8 @@ plot_rmst_individual <- function(rmst_dynamic_df, group = NULL, alpha = 0.15,
 #' @param title Plot title.
 #' @examples
 #' t <- seq(0, 5, by = 1)
-#' S <- cbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
-#' rd <- rmst_dynamic(t, S)
+#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
+#' rd <- rmst_dynamic(S, t)
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
 #'   plot_rmst_mean(rd, group = c("G1", "G2", "G1"))
 #' }
@@ -251,9 +252,9 @@ plot_rmst_mean <- function(rmst_dynamic_df, group, title = "Mean RMST by group")
     .stop("`rmst_dynamic_df` must come from rmst_dynamic().")
   }
   series <- setdiff(names(rmst_dynamic_df), "tau")
-  if (length(series) < 1) .stop("No series columns in rmst_dynamic_df.")
+  if (length(series) < 1) .stop("No unit columns in rmst_dynamic_df.")
   if (missing(group) || length(group) != length(series)) {
-    .stop("`group` must be provided and have length equal to number of series.")
+    .stop("`group` must be provided and have length equal to number of units.")
   }
 
   df <- do.call(
