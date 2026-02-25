@@ -2,25 +2,22 @@
 % Please edit documentation in R/plots.R
 \name{plot_rmst_mean}
 \alias{plot_rmst_mean}
-\title{Plot mean dynamic RMST curves by group}
+\title{Plot group-level RMST summaries}
 \usage{
-plot_rmst_mean(rmst_dynamic_df, group, title = "Mean RMST by group")
+plot_rmst_mean(RMST_mat, group, statistic = c("mean", "median"), title = NULL)
 }
 \arguments{
-\item{rmst_dynamic_df}{Output of \code{rmst_dynamic()}.}
+\item{RMST_mat}{Numeric matrix from \code{rmst_dynamic()} (n_units x n_time).}
 
-\item{group}{Group labels (length = number of series).}
+\item{group}{Group labels of length n_units.}
 
-\item{title}{Plot title.}
+\item{statistic}{\code{"mean"} or \code{"median"}.}
+
+\item{title}{Optional title.}
+}
+\value{
+A ggplot object.
 }
 \description{
-Plot mean dynamic RMST curves by group
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
-rd <- rmst_dynamic(S, t)
-if (requireNamespace("ggplot2", quietly = TRUE)) {
-  plot_rmst_mean(rd, group = c("G1", "G2", "G1"))
-}
+Plot group-level RMST summaries
 }

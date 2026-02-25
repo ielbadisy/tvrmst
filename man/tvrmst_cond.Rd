@@ -2,30 +2,34 @@
 % Please edit documentation in R/tvrmst.R
 \name{tvrmst_cond}
 \alias{tvrmst_cond}
-\title{Conditional tvRMST mu_c(s, tau) = \eqn{(1 / S(s)) \int_s^{s+\tau} S(u)\,du}}
+\title{Conditional tvRMST}
 \usage{
-tvrmst_cond(S, time, s_grid, tau, eps = 1e-08)
+tvrmst_cond(
+  S,
+  time,
+  s_grid,
+  tau,
+  eps = 1e-08,
+  statistic = c("mean", "median", "unit")
+)
 }
 \arguments{
-\item{S}{Survival matrix (n_units x n_time).}
+\item{S}{Survival matrix/data.frame (rows = units, cols = time).}
 
-\item{time}{Time grid.}
+\item{time}{Numeric strictly increasing time vector.}
 
-\item{s_grid}{Nonnegative landmark grid.}
+\item{s_grid}{Landmark times.}
 
 \item{tau}{Positive window length.}
 
-\item{eps}{Stability threshold: require S(s) >= eps.}
+\item{eps}{Positivity threshold for \code{S(s)}.}
+
+\item{statistic}{One of \code{"mean"}, \code{"median"}, \code{"unit"}.}
 }
 \value{
-data.frame(s, <unit...>)
+For summary statistics: data.frame \code{s}, \code{estimate}.
+For \code{statistic = "unit"}: numeric matrix n_units x length(s_grid).
 }
 \description{
-Conditional tvRMST mu_c(s, tau) = \eqn{(1 / S(s)) \int_s^{s+\tau} S(u)\,du}
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-s_grid <- c(0, 1, 2)
-tvrmst_cond(S, t, s_grid, tau = 2)
+Conditional tvRMST
 }

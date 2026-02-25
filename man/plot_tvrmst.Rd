@@ -2,38 +2,24 @@
 % Please edit documentation in R/plots.R
 \name{plot_tvrmst}
 \alias{plot_tvrmst}
-\title{Plot conditional tvRMST curves for two arms (first series by default)}
+\title{Plot conditional tvRMST curves for two arms}
 \usage{
-plot_tvrmst(
-  mu0_df,
-  mu1_df,
-  labels = c("Control", "Treatment"),
-  series_col = NULL,
-  title = "Conditional tvRMST mu_c(s,tau) by arm"
-)
+plot_tvrmst(mu0_df, mu1_df, labels = c("Control", "Treatment"), title = NULL)
 }
 \arguments{
-\item{mu0_df}{Output of \code{tvrmst_cond()} for arm 0.}
+\item{mu0_df}{Data frame with columns \code{s}, \code{estimate}, optional \code{lower},
+\code{upper} for control arm.}
 
-\item{mu1_df}{Output of \code{tvrmst_cond()} for arm 1.}
+\item{mu1_df}{Data frame with columns \code{s}, \code{estimate}, optional \code{lower},
+\code{upper} for treatment arm.}
 
-\item{labels}{Character vector of length 2 for legend labels.}
+\item{labels}{Legend labels.}
 
-\item{series_col}{Optional column name to plot.}
-
-\item{title}{Plot title.}
+\item{title}{Optional title.}
+}
+\value{
+A ggplot object.
 }
 \description{
-Plot conditional tvRMST curves for two arms (first series by default)
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
-s_grid <- c(0, 1, 2)
-mu0 <- tvrmst_cond(S0, t, s_grid, tau = 2)
-mu1 <- tvrmst_cond(S1, t, s_grid, tau = 2)
-if (requireNamespace("ggplot2", quietly = TRUE)) {
-  plot_tvrmst(mu0, mu1, series_col = "A")
-}
+Plot conditional tvRMST curves for two arms
 }

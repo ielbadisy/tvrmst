@@ -2,26 +2,19 @@
 % Please edit documentation in R/plots.R
 \name{plot_rmst_delta}
 \alias{plot_rmst_delta}
-\title{Plot Delta RMST curve over tau}
+\title{Plot RMST delta curve}
 \usage{
-plot_rmst_delta(rmst_delta_df, title = "Delta RMST curve")
+plot_rmst_delta(rmst_delta_df, title = NULL)
 }
 \arguments{
-\item{rmst_delta_df}{Output of \code{rmst_delta_curve()}.}
+\item{rmst_delta_df}{Data frame with \code{tau}, \code{estimate}, and optional
+\code{lower}, \code{upper}.}
 
-\item{title}{Plot title.}
+\item{title}{Optional title.}
+}
+\value{
+A ggplot object.
 }
 \description{
-Plot Delta RMST curve over tau
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S0 <- exp(-0.2 * t)
-S1 <- exp(-0.15 * t)
-S <- rbind(Control = S0, Treatment = S1)
-rc <- rmst_curve(S, t)
-dr <- rmst_delta_curve(rc, "Treatment", "Control")
-if (requireNamespace("ggplot2", quietly = TRUE)) {
-  plot_rmst_delta(dr)
-}
+Plot RMST delta curve
 }

@@ -2,30 +2,34 @@
 % Please edit documentation in R/identities.R
 \name{check_identities}
 \alias{check_identities}
-\title{Identity checks for correctness}
+\title{Check RMST identity}
 \usage{
-check_identities(S, time, s_grid, tau, eps = 1e-08)
+check_identities(
+  S,
+  time,
+  s_grid,
+  tau,
+  eps = 1e-08,
+  statistic = c("mean", "unit")
+)
 }
 \arguments{
-\item{S}{Survival matrix (n_units x n_time)}
+\item{S}{Survival matrix/data.frame (rows = units, cols = time).}
 
-\item{time}{Time grid}
+\item{time}{Numeric strictly increasing time vector.}
 
-\item{s_grid}{Landmark grid}
+\item{s_grid}{Landmark times.}
 
-\item{tau}{Window length}
+\item{tau}{Positive window length.}
 
-\item{eps}{Stability threshold for mu_c}
+\item{eps}{Positivity threshold.}
+
+\item{statistic}{One of \code{"mean"} or \code{"unit"}.}
 }
 \value{
-data.frame(series, max_abs_error)
+\code{statistic = "mean"}: data.frame with \code{s}, \code{max_abs_error}.
+\code{statistic = "unit"}: data.frame with \code{s}, \code{unit}, \code{max_abs_error}.
 }
 \description{
-Checks: mu(s+tau) - mu(s) = S(s) * mu_c(s,tau)
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-s_grid <- c(0, 1, 2)
-check_identities(S, t, s_grid, tau = 2)
+Checks \code{RMST(s+tau)-RMST(s) = S(s) * mu_c(s,tau)}.
 }

@@ -2,31 +2,27 @@
 % Please edit documentation in R/tvrmst.R
 \name{rmst_window}
 \alias{rmst_window}
-\title{Window RMST difference W(s, tau) = \eqn{\int_s^{s+\tau} (S_1 - S_0)\,du}}
+\title{Window RMST difference}
 \usage{
-rmst_window(S1, S0, time, s_grid, tau)
+rmst_window(S1, S0, time, s_grid, tau, statistic = c("mean", "median", "unit"))
 }
 \arguments{
-\item{S1}{Survival matrix (n_units x n_time) for arm 1.}
+\item{S1}{Arm-1 survival matrix/data.frame (rows = units, cols = time).}
 
-\item{S0}{Survival matrix (n_units x n_time) for arm 0.}
+\item{S0}{Arm-0 survival matrix/data.frame (rows = units, cols = time).}
 
-\item{time}{Time grid.}
+\item{time}{Numeric strictly increasing time vector.}
 
-\item{s_grid}{Nonnegative landmark grid.}
+\item{s_grid}{Landmark times.}
 
 \item{tau}{Positive window length.}
+
+\item{statistic}{One of \code{"mean"}, \code{"median"}, \code{"unit"}.}
 }
 \value{
-data.frame(s, <unit...>)
+For summary statistics: data.frame \code{s}, \code{estimate}.
+For \code{statistic = "unit"}: numeric matrix n_units x length(s_grid).
 }
 \description{
-Window RMST difference W(s, tau) = \eqn{\int_s^{s+\tau} (S_1 - S_0)\,du}
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
-s_grid <- c(0, 1, 2)
-rmst_window(S1, S0, t, s_grid, tau = 2)
+Window RMST difference
 }

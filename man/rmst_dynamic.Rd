@@ -2,23 +2,19 @@
 % Please edit documentation in R/rmst.R
 \name{rmst_dynamic}
 \alias{rmst_dynamic}
-\title{Individual (dynamic) RMST curves aligned to the time grid}
+\title{Dynamic RMST on the provided time grid}
 \usage{
 rmst_dynamic(S, time)
 }
 \arguments{
-\item{S}{Survival matrix (n_units x n_time).}
+\item{S}{Survival predictions as matrix/data.frame with rows = units and
+columns = time points.}
 
-\item{time}{Numeric time grid (length n_time).}
+\item{time}{Numeric strictly increasing time vector.}
 }
 \value{
-data.frame with column tau (including 0) and one column per unit.
+Numeric matrix of shape n_units x length(time).
 }
 \description{
-Returns RMST values for each unit at every grid time, including tau = 0.
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-rmst_dynamic(S, t)
+Dynamic RMST on the provided time grid
 }

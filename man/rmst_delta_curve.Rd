@@ -2,28 +2,20 @@
 % Please edit documentation in R/rmst.R
 \name{rmst_delta_curve}
 \alias{rmst_delta_curve}
-\title{Delta RMST curve between two arms in an rmst_curve() output}
+\title{Delta RMST curve from a wide rmst-curve table}
 \usage{
 rmst_delta_curve(rmst_curve_df, arm1, arm0)
 }
 \arguments{
-\item{rmst_curve_df}{Output of rmst_curve().}
+\item{rmst_curve_df}{Wide data.frame with \code{tau} and one column per arm.}
 
 \item{arm1}{Column name for arm 1.}
 
 \item{arm0}{Column name for arm 0.}
 }
 \value{
-data.frame(tau, delta)
+data.frame with columns \code{tau}, \code{estimate}.
 }
 \description{
-Delta RMST curve between two arms in an rmst_curve() output
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S0 <- exp(-0.2 * t)
-S1 <- exp(-0.15 * t)
-S <- rbind(Control = S0, Treatment = S1)
-rc <- rmst_curve(S, t)
-rmst_delta_curve(rc, "Treatment", "Control")
+Delta RMST curve from a wide rmst-curve table
 }

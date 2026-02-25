@@ -2,38 +2,37 @@
 % Please edit documentation in R/bootstrap.R
 \name{bootstrap_tvrmst_diff_reps}
 \alias{bootstrap_tvrmst_diff_reps}
-\title{Summarize Delta_c(s, tau) from a list of replicate survival matrices}
+\title{Bootstrap summary for tvRMST differences}
 \usage{
-bootstrap_tvrmst_diff_reps(reps, time, s_grid, tau, eps = 1e-08, conf = 0.95)
+bootstrap_tvrmst_diff_reps(
+  reps,
+  time,
+  s_grid,
+  tau,
+  eps = 1e-08,
+  conf = 0.95,
+  statistic = "mean"
+)
 }
 \arguments{
-\item{reps}{List of length R, each element list(S1=..., S0=...)}
+\item{reps}{List of bootstrap replicates. Each element must be
+\verb{list(S1 = <matrix/data.frame>, S0 = <matrix/data.frame>)}.}
 
-\item{time}{Time grid}
+\item{time}{Numeric strictly increasing time vector.}
 
-\item{s_grid}{Landmark grid}
+\item{s_grid}{Landmark times.}
 
-\item{tau}{Window length}
+\item{tau}{Positive window length.}
 
-\item{eps}{Stability threshold}
+\item{eps}{Positivity threshold passed to \code{tvrmst_diff()}.}
 
-\item{conf}{Confidence level}
+\item{conf}{Confidence level in (0,1).}
+
+\item{statistic}{Summary statistic passed to \code{tvrmst_diff()}.}
 }
 \value{
-data.frame(s, estimate, lower, upper)
+data.frame with columns \code{s}, \code{estimate}, \code{lower}, \code{upper}.
 }
 \description{
-Summarize Delta_c(s, tau) from a list of replicate survival matrices
-}
-\examples{
-set.seed(1)
-t <- seq(0, 5, by = 1)
-s_grid <- c(0, 1, 2)
-reps <- lapply(1:10, function(i) {
-  list(
-    S1 = matrix(exp(-(0.15 + runif(1, -0.02, 0.02)) * t), nrow = 1),
-    S0 = matrix(exp(-(0.20 + runif(1, -0.02, 0.02)) * t), nrow = 1)
-  )
-})
-bootstrap_tvrmst_diff_reps(reps, t, s_grid, tau = 2, conf = 0.9)
+Bootstrap summary for tvRMST differences
 }

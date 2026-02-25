@@ -2,23 +2,32 @@
 % Please edit documentation in R/rmst.R
 \name{rmst_curve}
 \alias{rmst_curve}
-\title{RMST curve evaluated at tau = \code{time[-1]}}
+\title{RMST curve summarized across units}
 \usage{
-rmst_curve(S, time)
+rmst_curve(
+  S,
+  time,
+  statistic = c("mean", "median"),
+  probs = c(0.025, 0.975),
+  conf = NULL
+)
 }
 \arguments{
-\item{S}{Survival matrix (n_units x n_time).}
+\item{S}{Survival predictions as matrix/data.frame with rows = units and
+columns = time points.}
 
-\item{time}{Numeric time grid (length n_time).}
+\item{time}{Numeric strictly increasing time vector.}
+
+\item{statistic}{Summary statistic across units: \code{"mean"} or \code{"median"}.}
+
+\item{probs}{Quantiles for interval summary when \code{conf = NULL}.}
+
+\item{conf}{Optional confidence level in (0,1) for normal-approx intervals.}
 }
 \value{
-data.frame with column tau and one column per unit.
+data.frame with columns \code{tau}, \code{estimate}, and optional \code{lower},
+\code{upper}.
 }
 \description{
-Returns a data.frame with tau and RMST(tau) for each unit column.
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-rmst_curve(S, t)
+RMST curve summarized across units
 }

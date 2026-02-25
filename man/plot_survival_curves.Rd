@@ -2,35 +2,33 @@
 % Please edit documentation in R/plots.R
 \name{plot_survival_curves}
 \alias{plot_survival_curves}
-\title{Plot two survival curves (first column only) as ggplot}
+\title{Plot survival curves from unit x time matrices}
 \usage{
 plot_survival_curves(
   S0,
   S1,
   time,
   labels = c("Control", "Treatment"),
-  title = "Survival curves"
+  title = NULL,
+  show = c("mean", "first")
 )
 }
 \arguments{
-\item{S0}{Survival matrix (n_units x n_time) for control arm.}
+\item{S0}{Control survival matrix/data.frame (rows = units, cols = time).}
 
-\item{S1}{Survival matrix (n_units x n_time) for treatment arm.}
+\item{S1}{Treatment survival matrix/data.frame (rows = units, cols = time).}
 
-\item{time}{Time grid.}
+\item{time}{Numeric time vector.}
 
-\item{labels}{Character vector of length 2 for legend labels.}
+\item{labels}{Legend labels.}
 
-\item{title}{Plot title.}
+\item{title}{Optional title.}
+
+\item{show}{\code{"mean"} uses row means; \code{"first"} uses first row.}
+}
+\value{
+A ggplot object.
 }
 \description{
-Plot two survival curves (first column only) as ggplot
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S0 <- rbind(A = exp(-0.2 * t))
-S1 <- rbind(A = exp(-0.15 * t))
-if (requireNamespace("ggplot2", quietly = TRUE)) {
-  plot_survival_curves(S0, S1, t)
-}
+Plot survival curves from unit x time matrices
 }

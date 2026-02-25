@@ -2,26 +2,19 @@
 % Please edit documentation in R/plots.R
 \name{plot_tvrmst_diff}
 \alias{plot_tvrmst_diff}
-\title{Plot Delta_c(s,tau) with optional CI (estimate/lower/upper)}
+\title{Plot tvRMST difference (and bootstrap CI when available)}
 \usage{
-plot_tvrmst_diff(delta_df, title = "Delta_c(s,tau)")
+plot_tvrmst_diff(delta_df, title = NULL)
 }
 \arguments{
-\item{delta_df}{Output of \code{tvrmst_diff()} or a data.frame with columns
-\code{s}, \code{estimate}, \code{lower}, \code{upper}.}
+\item{delta_df}{Data frame with columns \code{s}, \code{estimate}, optional \code{lower},
+\code{upper}.}
 
-\item{title}{Plot title.}
+\item{title}{Optional title.}
+}
+\value{
+A ggplot object.
 }
 \description{
-Plot Delta_c(s,tau) with optional CI (estimate/lower/upper)
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
-s_grid <- c(0, 1, 2)
-delta <- tvrmst_diff(S1, S0, t, s_grid, tau = 2)
-if (requireNamespace("ggplot2", quietly = TRUE)) {
-  plot_tvrmst_diff(delta)
-}
+Plot tvRMST difference (and bootstrap CI when available)
 }

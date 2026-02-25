@@ -2,25 +2,22 @@
 % Please edit documentation in R/rmst.R
 \name{rmst_tau}
 \alias{rmst_tau}
-\title{RMST at a single horizon tau}
+\title{RMST at a fixed horizon}
 \usage{
 rmst_tau(S, time, tau)
 }
 \arguments{
-\item{S}{Survival matrix (n_units x n_time).}
+\item{S}{Survival predictions as matrix/data.frame with rows = units and
+columns = time points.}
 
-\item{time}{Numeric time grid (length n_time).}
+\item{time}{Numeric strictly increasing time vector.}
 
-\item{tau}{Nonnegative scalar horizon.}
+\item{tau}{Numeric scalar horizon.}
 }
 \value{
-Numeric vector of length nrow(S).
+Numeric vector length n_units. Attribute \code{tau_used} records the grid
+time used after nearest-grid snapping.
 }
 \description{
-RMST(tau) = \eqn{\int_0^\tau S(u)\,du} computed by trapezoid rule on the grid.
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-rmst_tau(S, t, tau = 3)
+RMST at a fixed horizon
 }

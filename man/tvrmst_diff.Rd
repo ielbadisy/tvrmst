@@ -2,7 +2,7 @@
 % Please edit documentation in R/tvrmst.R
 \name{tvrmst_diff}
 \alias{tvrmst_diff}
-\title{Conditional tvRMST difference Delta_c(s, tau) = mu_c1(s, tau) - mu_c0(s, tau)}
+\title{Difference in conditional tvRMST between arms}
 \usage{
 tvrmst_diff(
   S1,
@@ -15,31 +15,24 @@ tvrmst_diff(
 )
 }
 \arguments{
-\item{S1}{Survival matrix for arm 1.}
+\item{S1}{Arm-1 survival matrix/data.frame (rows = units, cols = time).}
 
-\item{S0}{Survival matrix for arm 0.}
+\item{S0}{Arm-0 survival matrix/data.frame (rows = units, cols = time).}
 
-\item{time}{Time grid.}
+\item{time}{Numeric strictly increasing time vector.}
 
-\item{s_grid}{Landmark grid.}
+\item{s_grid}{Landmark times.}
 
-\item{tau}{Window length.}
+\item{tau}{Positive window length.}
 
-\item{eps}{Stability threshold.}
+\item{eps}{Positivity threshold.}
 
-\item{statistic}{Aggregation: "mean", "median", or "unit".}
+\item{statistic}{One of \code{"mean"}, \code{"median"}, \code{"unit"}.}
 }
 \value{
-data.frame(s, estimate) for statistic != "unit";
-data.frame(s, <unit...>) for statistic = "unit".
+For summary statistics: data.frame \code{s}, \code{estimate}.
+For \code{statistic = "unit"}: numeric matrix n_units x length(s_grid).
 }
 \description{
-Conditional tvRMST difference Delta_c(s, tau) = mu_c1(s, tau) - mu_c0(s, tau)
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
-s_grid <- c(0, 1, 2)
-tvrmst_diff(S1, S0, t, s_grid, tau = 2)
+Difference in conditional tvRMST between arms
 }

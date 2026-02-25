@@ -2,32 +2,30 @@
 % Please edit documentation in R/plots.R
 \name{plot_rmst_individual}
 \alias{plot_rmst_individual}
-\title{Plot individual dynamic RMST curves with optional grouping}
+\title{Plot individual RMST trajectories}
 \usage{
 plot_rmst_individual(
-  rmst_dynamic_df,
+  RMST_mat,
   group = NULL,
-  alpha = 0.15,
-  title = "Individual RMST curves"
+  max_units = 150,
+  alpha = 0.1,
+  title = NULL
 )
 }
 \arguments{
-\item{rmst_dynamic_df}{Output of \code{rmst_dynamic()}.}
+\item{RMST_mat}{Numeric matrix from \code{rmst_dynamic()} (n_units x n_time).}
 
-\item{group}{Optional vector of group labels (length = number of series).}
+\item{group}{Optional grouping vector of length n_units.}
 
-\item{alpha}{Line transparency for individual curves.}
+\item{max_units}{Maximum number of units to plot.}
 
-\item{title}{Plot title.}
+\item{alpha}{Line alpha.}
+
+\item{title}{Optional title.}
+}
+\value{
+A ggplot object.
 }
 \description{
-Plot individual dynamic RMST curves with optional grouping
-}
-\examples{
-t <- seq(0, 5, by = 1)
-S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t), C = exp(-0.25 * t))
-rd <- rmst_dynamic(S, t)
-if (requireNamespace("ggplot2", quietly = TRUE)) {
-  plot_rmst_individual(rd, group = c("G1", "G2", "G1"))
-}
+Plot individual RMST trajectories
 }

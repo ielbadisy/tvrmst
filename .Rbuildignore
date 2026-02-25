@@ -1,4 +1,5 @@
 ^\.git$
+^\.quarto$
 ^\.gitignore$
 ^\.Rproj\.user$
 ^.*\.Rproj$
