@@ -2,7 +2,6 @@
 
 export(as_survmat)
 export(as_unit_time)
-export(bootstrap_tvrmst_diff_cols)
 export(bootstrap_tvrmst_diff_reps)
 export(check_identities)
 export(plot_rmst_curve)
