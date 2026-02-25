@@ -1,4 +1,7 @@
 
+output: github_document: math_method: “default” md_extensions:
++tex_math_dollars html_preview: false
+
 # tvrmst
 
 ## Time-Varying Restricted Mean Survival Time from Survival Matrices
@@ -19,7 +22,7 @@ This learner-agnostic input works for:
 
 - Kaplan-Meier curves,
 - Cox / parametric model predictions,
-- deep survival models (e.g. `survdnn`),
+- deep survival models (e.g. `survdnn`),
 - any estimator that outputs survival probabilities on a grid.
 
 # 1. From RMST to Time-Varying RMST
@@ -40,8 +43,6 @@ This provides an interpretable alternative to hazard ratios, especially
 under **non-proportional hazards**, delayed effects, or crossing
 survival curves.
 
-::::::::::::::::::::::::::::::::::::
-
 ## 1.2 RMST difference curve
 
 For two arms (1 vs 0):
@@ -55,15 +56,11 @@ patterns such as:
 - delayed separation,
 - sign changes when curves cross.
 
-::::::::::::::::::::::::::::::::::::
-
 ## 1.3 Window RMST contrast
 
 To localize the effect within a window $[s, s+\tau]$:
 
 $W(s,\tau)=\int_s^{s+\tau} \left(S_1(u)-S_0(u)\right)\,du$
-
-::::::::::::::::::::::::::::::::::::
 
 ## 1.4 Conditional (landmark) tvRMST
 
@@ -80,8 +77,6 @@ Interpretation:
 > Expected additional survival time in the next tau units given survival
 > up to landmark time s.
 
-::::::::::::::::::::::::::::::::::::
-
 # 2. Installation
 
 CRAN version (once available):
@@ -96,8 +91,6 @@ Development version:
 # install.packages("remotes")
 remotes::install_github("ielbadisy/tvrmst")
 ```
-
-::::::::::::::::::::::::::::::::::::
 
 # 3. Input Interface
 
@@ -120,12 +113,10 @@ S_fixed <- as_unit_time(S_legacy, time, by = "rows")
 
 No automatic transposition is performed inside compute functions.
 
-::::::::::::::::::::::::::::::::::::
-
 # 4. Minimal API (concise)
 
 | Quantity                               | Function                       | Output         |
-|::::::::::::::::::::|::::::::::::::::|::::::::|
+|----------------------------------------|--------------------------------|----------------|
 | RMST at fixed tau                      | `rmst_tau()`                   | numeric vector |
 | RMST curve (tau -\> RMST(tau))         | `rmst_curve()`                 | data.frame     |
 | Delta RMST curve (Delta(tau))          | `rmst_delta_curve()`           | data.frame     |
@@ -141,8 +132,6 @@ Plot helpers (require `ggplot2`):
 - `plot_rmst_delta()`
 - `plot_tvrmst()`
 - `plot_tvrmst_diff()`
-
-::::::::::::::::::::::::::::::::::::
 
 # 5. Example 1 : Kaplan-Meier (non-PH illustration)
 
@@ -237,12 +226,31 @@ delta_8
 #> [1] -0.9166044
 ```
 
-## Step 4 : RMST curve and delta curve
+## Step 4 : RMST curve and delta curve (arm comparison)
 
 ``` r
 rc <- rmst_curve(S_both, t_grid)
 dr <- rmst_delta_curve(rc, arm1 = "Treatment", arm0 = "Control")
+
+# dr$delta is RMST_Treatment(tau) - RMST_Control(tau)
+head(dr)
+#>    tau         delta
+#> 1 0.25 -0.0007029366
+#> 2 0.50 -0.0049863895
+#> 3 0.75 -0.0135739337
+#> 4 1.00 -0.0261412648
+#> 5 1.25 -0.0423626749
+#> 6 1.50 -0.0574156936
+
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plot_rmst_delta(
+    rmst_delta_df = dr,
+    title = "Delta RMST(tau) = Treatment - Control"
+  )
+}
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ## Step 5 : Conditional tvRMST difference (\_c(s,))
 
@@ -283,9 +291,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 }
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!: :>
-
-::::::::::::::::::::::::::::::::::::
+![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 # 6. Example 2 : Using survdnn predictions (same dataset)
 
@@ -382,13 +388,13 @@ mu_mean <- rowMeans(mu_indiv[, -1])
 out <- data.frame(s = mu_indiv$s, mean_tvRMST = mu_mean)
 out
 #>    s mean_tvRMST
-#> 1  0    4.904625
-#> 2  2    4.985077
-#> 3  4    5.091930
-#> 4  6    5.403424
-#> 5  8    5.406504
-#> 6 10    5.446840
-#> 7 12    5.459796
+#> 1  0    4.194363
+#> 2  2    4.313159
+#> 3  4    4.464516
+#> 4  6    4.966866
+#> 5  8    4.971475
+#> 6 10    5.037752
+#> 7 12    5.060880
 ```
 
 ## Step 6 : Individualized RMST curves
@@ -411,9 +417,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 }
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!: :>
-
-::::::::::::::::::::::::::::::::::::
+![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 # 7. Bootstrap confidence intervals
 
@@ -459,13 +463,11 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 }
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!: :>
+![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 Row bootstrap has been removed from the package to avoid degenerate
 usage. For trial-style inference, use `bootstrap_tvrmst_diff_reps()`
 (Section 7.1).
-
-::::::::::::::::::::::::::::::::::::
 
 # 8. Identity check (internal consistency)
 
@@ -477,8 +479,6 @@ $\mathrm{RMST}(s+\tau)-\mathrm{RMST}(s) = S(s)\,\mu_c(s,\tau)$
 # check_identities(S, time, s_grid, tau, eps = ...)
 ```
 
-::::::::::::::::::::::::::::::::::::
-
 # Citation
 
 If you use `tvrmst`, please cite the package paper (R Journal
@@ -487,21 +487,17 @@ submission):
 > EL BADISY, I. (2026). *tvrmst: Time-Varying RMST from Survival
 > Matrices*. The R Journal (submitted).
 
-::::::::::::::::::::::::::::::::::::
-
 # License
 
 MIT.
-
-::::::::::::::::::::::::::::::::::::
 
 ## References (conceptual background)
 
 - Royston, P. & Parmar, M. K. B. (2011). RMST as an alternative to the
   hazard ratio under non-proportional hazards.
-- Huang, B. et al. (2020). RMST-based estimation as interpretable effect
+- Huang, B. et al. (2020). RMST-based estimation as interpretable effect
   size under non-PH.
-- Syriopoulou, E. et al. (2022). Absolute survival contrasts for
+- Syriopoulou, E. et al. (2022). Absolute survival contrasts for
   interpretability.
-- Yang, S. et al. (2021). Dynamic/conditional RMST formulations in
+- Yang, S. et al. (2021). Dynamic/conditional RMST formulations in
   landmarking/regression frameworks.
