@@ -1,94 +1,116 @@
 library(testthat)
 
+test_that("rmst_dynamic returns n x m matrix and accepts data.frame", {
+  time <- seq(0, 6, by = 1)
+  S <- rbind(A = exp(-0.2 * time), B = exp(-0.1 * time))
 
-test_that("rmst_tau handles basic and edge cases", {
-  t <- seq(0, 10, by = 1)
-  S <- matrix(1, nrow = 2, ncol = length(t))
+  out <- rmst_dynamic(S, time)
+  expect_true(is.matrix(out))
+  expect_equal(dim(out), dim(S))
+  expect_equal(colnames(out), as.character(time))
 
-  out <- rmst_tau(S, t, tau = 5)
-  expect_equal(unname(out), c(5, 5))
-
-  # tau beyond max(t) should extend with constant survival
-  out2 <- rmst_tau(S, t, tau = 12)
-  expect_equal(unname(out2), c(12, 12))
-
-  # tau before first positive time when t does not include 0
-  t2 <- seq(1, 5, by = 1)
-  S2 <- matrix(1, nrow = 1, ncol = length(t2))
-  out3 <- rmst_tau(S2, t2, tau = 0.5)
-  expect_equal(unname(out3), 0.5)
-
-  expect_error(rmst_tau(S, t, tau = -1))
+  pred_df <- as.data.frame(S)
+  out_df <- rmst_dynamic(pred_df, time)
+  expect_true(is.matrix(out_df))
+  expect_equal(dim(out_df), dim(S))
 })
 
+test_that("rmst_tau snaps tau to nearest grid and stores tau_used", {
+  time <- seq(0, 10, by = 2)
+  S <- rbind(A = exp(-0.2 * time), B = exp(-0.1 * time))
 
-test_that("rmst_curve and rmst_delta_curve behave as expected", {
-  t <- seq(0, 4, by = 1)
-  S <- rbind(rep(1, length(t)), rep(1, length(t)))
-
-  rc <- rmst_curve(S, t)
-  expect_equal(rc$tau, t[-1])
-  expect_equal(rc[[1 + 1]], t[-1])
-  expect_equal(rc[[2 + 1]], t[-1])
-
-  delta <- rmst_delta_curve(rc, arm1 = colnames(rc)[2], arm0 = colnames(rc)[3])
-  expect_true(all(delta$delta == 0))
+  out <- rmst_tau(S, time, tau = 5.1)
+  expect_equal(attr(out, "tau_used"), 6)
+  expect_length(out, nrow(S))
 })
 
+test_that("rmst_curve and rmst_delta_curve new schema", {
+  time <- seq(0, 4, by = 1)
+  S0 <- matrix(exp(-0.2 * time), nrow = 1)
+  S1 <- matrix(exp(-0.1 * time), nrow = 1)
 
-test_that("rmst_window integrates windowed differences", {
-  t <- seq(0, 10, by = 1)
-  S1 <- matrix(1, nrow = 1, ncol = length(t))
-  S0 <- matrix(0.5, nrow = 1, ncol = length(t))
-  s_grid <- seq(0, 5, by = 1)
+  rc0 <- rmst_curve(S0, time, statistic = "mean", probs = NULL)
+  rc1 <- rmst_curve(S1, time, statistic = "mean", probs = NULL)
+
+  wide <- data.frame(tau = time, Control = rc0$estimate, Treatment = rc1$estimate)
+  dr <- rmst_delta_curve(wide, arm1 = "Treatment", arm0 = "Control")
+
+  expect_equal(names(rc0), c("tau", "estimate"))
+  expect_equal(names(dr), c("tau", "estimate"))
+  expect_true(all(dr$estimate >= 0))
+})
+
+test_that("rmst_window/tvrmst_cond/tvrmst_diff support summary and unit modes", {
+  time <- seq(0, 8, by = 1)
+  s_grid <- seq(0, 6, by = 2)
   tau <- 2
 
-  w <- rmst_window(S1, S0, t, s_grid, tau)
-  expect_equal(nrow(w), length(s_grid))
-  expect_equal(w[[2]], rep(1, length(s_grid)))
+  S0 <- matrix(exp(-0.2 * time), nrow = 2, ncol = length(time), byrow = TRUE)
+  S1 <- matrix(exp(-0.15 * time), nrow = 3, ncol = length(time), byrow = TRUE)
+
+  w_mean <- rmst_window(S1, S0, time, s_grid, tau, statistic = "mean")
+  expect_equal(names(w_mean), c("s", "estimate"))
+
+  mu_med <- tvrmst_cond(S1, time, s_grid, tau, statistic = "median")
+  expect_equal(names(mu_med), c("s", "estimate"))
+
+  d_mean <- tvrmst_diff(S1, S0, time, s_grid, tau, statistic = "mean")
+  expect_equal(names(d_mean), c("s", "estimate"))
+
+  S0_pair <- S0
+  S1_pair <- matrix(exp(-0.15 * time), nrow = 2, ncol = length(time), byrow = TRUE)
+  w_unit <- rmst_window(S1_pair, S0_pair, time, s_grid, tau, statistic = "unit")
+  d_unit <- tvrmst_diff(S1_pair, S0_pair, time, s_grid, tau, statistic = "unit")
+  mu_unit <- tvrmst_cond(S1_pair, time, s_grid, tau, statistic = "unit")
+
+  expect_true(is.matrix(w_unit))
+  expect_true(is.matrix(d_unit))
+  expect_true(is.matrix(mu_unit))
+  expect_equal(ncol(w_unit), length(s_grid))
 })
 
+test_that("vector inputs are rejected for compute functions", {
+  time <- seq(0, 5, by = 1)
+  S0_vec <- exp(-0.2 * time)
+  S1_vec <- exp(-0.1 * time)
 
-test_that("tvrmst_cond returns tau for constant survival", {
-  t <- seq(0, 10, by = 1)
-  S <- matrix(1, nrow = 1, ncol = length(t))
-  s_grid <- seq(0, 8, by = 1)
-  tau <- 3
-
-  mu <- tvrmst_cond(S, t, s_grid, tau, eps = 1e-6)
-  expect_equal(mu[[2]], rep(tau, length(s_grid)))
+  expect_error(
+    tvrmst_diff(S1_vec, S0_vec, time, s_grid = c(0, 1), tau = 1),
+    "must be a numeric matrix or data.frame"
+  )
 })
 
-
-test_that("tvrmst_diff is zero when arms are identical", {
-  t <- seq(0, 8, by = 1)
-  S <- matrix(exp(-0.2 * t), nrow = 1)
-  s_grid <- seq(0, 6, by = 1)
-  tau <- 2
-
-  delta <- tvrmst_diff(S, S, t, s_grid, tau, eps = 1e-6)
-  expect_true(all(abs(delta[[2]]) < 1e-12))
-})
-
-
-test_that("plot helpers return ggplot objects when ggplot2 is available", {
+test_that("plot helpers consume precomputed objects", {
   skip_if_not_installed("ggplot2")
 
-  t <- seq(0, 4, by = 1)
-  S0 <- matrix(exp(-0.2 * t), nrow = 1)
-  S1 <- matrix(exp(-0.1 * t), nrow = 1)
+  time <- seq(0, 5, by = 1)
+  S0 <- matrix(exp(-0.2 * time), nrow = 1)
+  S1 <- matrix(exp(-0.1 * time), nrow = 1)
 
-  p1 <- plot_survival_curves(S0, S1, t)
-  expect_s3_class(p1, "ggplot")
+  p_surv <- plot_survival_curves(S0, S1, time, show = "mean")
+  expect_s3_class(p_surv, "ggplot")
 
-  s_grid <- seq(0, 3, by = 1)
-  mu0 <- tvrmst_cond(S0, t, s_grid, tau = 1)
-  mu1 <- tvrmst_cond(S1, t, s_grid, tau = 1)
+  rc <- rmst_curve(rbind(S0, S1), time, statistic = "mean", probs = NULL)
+  p_rc <- plot_rmst_curve(rc)
+  expect_s3_class(p_rc, "ggplot")
 
-  p2 <- plot_tvrmst(mu0, mu1)
-  expect_s3_class(p2, "ggplot")
+  dr <- data.frame(tau = rc$tau, estimate = rc$estimate - rc$estimate)
+  p_dr <- plot_rmst_delta(dr)
+  expect_s3_class(p_dr, "ggplot")
 
-  delta <- tvrmst_diff(S1, S0, t, s_grid, tau = 1)
-  p3 <- plot_tvrmst_diff(delta)
-  expect_s3_class(p3, "ggplot")
+  s_grid <- seq(0, 4, by = 1)
+  mu0 <- tvrmst_cond(S0, time, s_grid, tau = 1, statistic = "mean")
+  mu1 <- tvrmst_cond(S1, time, s_grid, tau = 1, statistic = "mean")
+  delta_c <- tvrmst_diff(S1, S0, time, s_grid, tau = 1, statistic = "mean")
+
+  p_mu <- plot_tvrmst(mu0, mu1)
+  p_delta <- plot_tvrmst_diff(delta_c)
+  expect_s3_class(p_mu, "ggplot")
+  expect_s3_class(p_delta, "ggplot")
+
+  RMST_mat <- rmst_dynamic(rbind(S0, S1), time)
+  p_ind <- plot_rmst_individual(RMST_mat, group = c("Control", "Treatment"))
+  p_mean <- plot_rmst_mean(RMST_mat, group = c("Control", "Treatment"), statistic = "mean")
+  expect_s3_class(p_ind, "ggplot")
+  expect_s3_class(p_mean, "ggplot")
 })

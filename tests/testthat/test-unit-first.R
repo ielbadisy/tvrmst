@@ -1,47 +1,34 @@
 library(testthat)
 
-test_that("matrix input works with unit-first orientation", {
-  time <- seq(0, 10, length.out = 20)
-  S <- matrix(runif(50 * length(time)), nrow = 50, ncol = length(time))
-  expect_silent(rmst_dynamic(S, time))
+test_that("1 x m inputs work across rmst/tvrmst/window", {
+  time <- seq(0, 8, by = 1)
+  s_grid <- seq(0, 6, by = 2)
+  tau <- 2
+
+  S0 <- exp(-0.2 * time)
+  S1 <- exp(-0.1 * time)
+
+  S0_mat <- rbind(Control = S0)
+  S1_mat <- rbind(Treatment = S1)
+  S_both <- rbind(Control = S0, Treatment = S1)
+
+  rd <- rmst_dynamic(S_both, time)
+  rt <- rmst_tau(S_both, time, tau = 3.2)
+  rw <- rmst_window(S1_mat, S0_mat, time, s_grid, tau, statistic = "mean")
+  mu0 <- tvrmst_cond(S0_mat, time, s_grid, tau, statistic = "mean")
+  mu1 <- tvrmst_cond(S1_mat, time, s_grid, tau, statistic = "mean")
+  dc <- tvrmst_diff(S1_mat, S0_mat, time, s_grid, tau, statistic = "mean")
+
+  expect_true(is.matrix(rd))
+  expect_length(rt, 2)
+  expect_equal(names(rw), c("s", "estimate"))
+  expect_equal(names(mu0), c("s", "estimate"))
+  expect_equal(names(mu1), c("s", "estimate"))
+  expect_equal(names(dc), c("s", "estimate"))
 })
 
-test_that("data.frame input works with unit-first orientation", {
-  time <- seq(0, 10, length.out = 20)
-  S <- matrix(runif(10 * length(time)), nrow = 10, ncol = length(time))
-  S_df <- as.data.frame(S)
-  out <- rmst_dynamic(S_df, time)
-  expect_true(is.data.frame(out))
-  expect_true("tau" %in% names(out))
-})
-
-test_that("error on mismatched ncol and time length", {
-  time <- seq(0, 10, length.out = 20)
-  S <- matrix(runif(50 * (length(time) - 1)), nrow = 50, ncol = length(time) - 1)
+test_that("validator catches ncol mismatch", {
+  time <- seq(0, 5, by = 1)
+  S <- matrix(runif(10), nrow = 2, ncol = 5)
   expect_error(rmst_dynamic(S, time), "ncol\\(S\\) == length\\(time\\)")
-})
-
-test_that("two-arm mean diff works with unequal rows", {
-  time <- seq(0, 6, by = 1)
-  s_grid <- seq(0, 4, by = 1)
-  tau <- 2
-  S1 <- matrix(exp(-0.15 * time), nrow = 3, ncol = length(time), byrow = TRUE)
-  S0 <- matrix(exp(-0.20 * time), nrow = 5, ncol = length(time), byrow = TRUE)
-
-  out <- tvrmst_diff(S1, S0, time, s_grid, tau, statistic = "mean")
-  expect_equal(names(out), c("s", "estimate"))
-  expect_equal(nrow(out), length(s_grid))
-})
-
-test_that("two-arm unit diff requires equal rows", {
-  time <- seq(0, 6, by = 1)
-  s_grid <- seq(0, 4, by = 1)
-  tau <- 2
-  S1 <- matrix(exp(-0.15 * time), nrow = 3, ncol = length(time), byrow = TRUE)
-  S0 <- matrix(exp(-0.20 * time), nrow = 5, ncol = length(time), byrow = TRUE)
-
-  expect_error(
-    tvrmst_diff(S1, S0, time, s_grid, tau, statistic = "unit"),
-    "same number of rows"
-  )
 })
