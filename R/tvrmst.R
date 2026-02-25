@@ -1,138 +1,152 @@
-#' Window RMST difference W(s, tau) = \eqn{\int_s^{s+\tau} (S_1 - S_0)\,du}
-#'
-#' @param S1 Survival matrix (n_units x n_time) for arm 1.
-#' @param S0 Survival matrix (n_units x n_time) for arm 0.
-#' @param time Time grid.
-#' @param s_grid Nonnegative landmark grid.
-#' @param tau Positive window length.
-#' @return data.frame(s, <unit...>)
-#' @examples
-#' t <- seq(0, 5, by = 1)
-#' S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
-#' s_grid <- c(0, 1, 2)
-#' rmst_window(S1, S0, t, s_grid, tau = 2)
-#' @export
-rmst_window <- function(S1, S0, time, s_grid, tau) {
-  S1 <- .coerce_unit_time(S1, time, "S1")
-  S0 <- .coerce_unit_time(S0, time, "S0")
-  if (nrow(S1) != nrow(S0)) .stop("S1 and S0 must have same number of rows (paired units).")
-  if (!is.numeric(s_grid) || any(!is.finite(s_grid)) || any(s_grid < 0)) {
-    .stop("`s_grid` must be nonnegative finite numeric.")
+.validate_landmark <- function(s_grid, tau) {
+  if (!is.numeric(s_grid) || length(s_grid) < 1 || any(!is.finite(s_grid)) || any(s_grid < 0)) {
+    .stop("`s_grid` must be a finite numeric vector with nonnegative values.")
   }
   if (!is.numeric(tau) || length(tau) != 1 || !is.finite(tau) || tau <= 0) {
     .stop("`tau` must be a single positive number.")
   }
-
-  time <- as.numeric(time)
-
-  out <- lapply(s_grid, function(s) {
-    # build explicit endpoints (s, s+tau) even if not in t
-    t_win <- sort(unique(c(time[time >= s & time <= (s + tau)], s, s + tau)))
-    if (length(t_win) < 2) return(rep(NA_real_, nrow(S1)))
-
-    S1w <- .surv_at(time, S1, t_win)
-    S0w <- .surv_at(time, S0, t_win)
-
-    .trapz_cols(t_win, S1w - S0w)
-  })
-
-  mat <- do.call(rbind, out)
-  colnames(mat) <- if (!is.null(rownames(S1))) rownames(S1) else paste0("unit", seq_len(nrow(S1)))
-  data.frame(s = s_grid, mat, check.names = FALSE)
 }
 
-#' Conditional tvRMST mu_c(s, tau) = \eqn{(1 / S(s)) \int_s^{s+\tau} S(u)\,du}
-#'
-#' @param S Survival matrix (n_units x n_time).
-#' @param time Time grid.
-#' @param s_grid Nonnegative landmark grid.
-#' @param tau Positive window length.
-#' @param eps Stability threshold: require S(s) >= eps.
-#' @return data.frame(s, <unit...>)
-#' @examples
-#' t <- seq(0, 5, by = 1)
-#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' s_grid <- c(0, 1, 2)
-#' tvrmst_cond(S, t, s_grid, tau = 2)
-#' @export
-tvrmst_cond <- function(S, time, s_grid, tau, eps = 1e-8) {
-  S <- .coerce_unit_time(S, time, "S")
-  if (!is.numeric(s_grid) || any(!is.finite(s_grid)) || any(s_grid < 0)) {
-    .stop("`s_grid` must be nonnegative finite numeric.")
-  }
-  if (!is.numeric(tau) || length(tau) != 1 || !is.finite(tau) || tau <= 0) {
-    .stop("`tau` must be a single positive number.")
-  }
-  if (!is.numeric(eps) || length(eps) != 1 || !is.finite(eps) || eps <= 0 || eps >= 1) {
-    .stop("`eps` must be in (0,1).")
-  }
+.window_integral_matrix <- function(S, time, s_grid, tau) {
+  n_units <- nrow(S)
+  out <- matrix(NA_real_, nrow = n_units, ncol = length(s_grid))
 
-  time <- as.numeric(time)
-
-  out <- lapply(s_grid, function(s) {
-    Ss <- as.numeric(.surv_at(time, S, s))
-    ok <- Ss >= eps
-
-    t_win <- sort(unique(c(time[time >= s & time <= (s + tau)], s, s + tau)))
-    if (length(t_win) < 2) return(rep(NA_real_, nrow(S)))
-
+  for (j in seq_along(s_grid)) {
+    s <- s_grid[j]
+    t_win <- sort(unique(c(s, s + tau, time[time >= s & time <= s + tau])))
+    if (length(t_win) < 2) next
     Sw <- .surv_at(time, S, t_win)
-    integ <- .trapz_cols(t_win, Sw)
+    out[, j] <- .trapz_cols(t_win, Sw)
+  }
 
-    mu <- rep(NA_real_, nrow(S))
-    mu[ok] <- integ[ok] / Ss[ok]
-    mu
-  })
-
-  mat <- do.call(rbind, out)
-  colnames(mat) <- if (!is.null(rownames(S))) rownames(S) else paste0("unit", seq_len(nrow(S)))
-  data.frame(s = s_grid, mat, check.names = FALSE)
+  if (!is.null(rownames(S))) rownames(out) <- rownames(S)
+  colnames(out) <- as.character(s_grid)
+  out
 }
 
-#' Conditional tvRMST difference Delta_c(s, tau) = mu_c1(s, tau) - mu_c0(s, tau)
+#' Window RMST difference
 #'
-#' @param time Time grid.
-#' @param S1 Survival matrix for arm 1.
-#' @param S0 Survival matrix for arm 0.
-#' @param s_grid Landmark grid.
-#' @param tau Window length.
-#' @param eps Stability threshold.
-#' @param statistic Aggregation: "mean", "median", or "unit".
-#' @return data.frame(s, estimate) for statistic != "unit";
-#'   data.frame(s, <unit...>) for statistic = "unit".
-#' @examples
-#' t <- seq(0, 5, by = 1)
-#' S0 <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' S1 <- rbind(A = exp(-0.15 * t), B = exp(-0.25 * t))
-#' s_grid <- c(0, 1, 2)
-#' tvrmst_diff(S1, S0, t, s_grid, tau = 2)
+#' @param S1 Arm-1 survival matrix/data.frame (rows = units, cols = time).
+#' @param S0 Arm-0 survival matrix/data.frame (rows = units, cols = time).
+#' @param time Numeric strictly increasing time vector.
+#' @param s_grid Landmark times.
+#' @param tau Positive window length.
+#' @param statistic One of `"mean"`, `"median"`, `"unit"`.
+#' @return For summary statistics: data.frame `s`, `estimate`.
+#'   For `statistic = "unit"`: numeric matrix n_units x length(s_grid).
 #' @export
-tvrmst_diff <- function(S1, S0, time, s_grid, tau, eps = 1e-8,
+rmst_window <- function(S1, S0, time, s_grid, tau,
                         statistic = c("mean", "median", "unit")) {
+  S1 <- validate_surv_input(S1, time, name = "S1")
+  S0 <- validate_surv_input(S0, time, name = "S0")
   statistic <- match.arg(statistic)
-  S1 <- .coerce_unit_time(S1, time, "S1")
-  S0 <- .coerce_unit_time(S0, time, "S0")
+  time <- as.numeric(time)
+  .validate_landmark(s_grid, tau)
 
-  mu1 <- tvrmst_cond(S1, time, s_grid, tau, eps = eps)
-  mu0 <- tvrmst_cond(S0, time, s_grid, tau, eps = eps)
-
-  mu1_mat <- as.matrix(mu1[-1])
-  mu0_mat <- as.matrix(mu0[-1])
+  int1 <- .window_integral_matrix(S1, time, s_grid, tau)
+  int0 <- .window_integral_matrix(S0, time, s_grid, tau)
 
   if (statistic == "unit") {
-    if (nrow(S1) != nrow(S0)) .stop("S1 and S0 must have same number of rows for statistic = \"unit\".")
-    delta <- mu1
-    delta[-1] <- mu1_mat - mu0_mat
-    if (ncol(delta) == 2) names(delta)[2] <- "delta_c"
-    return(delta)
+    if (nrow(S1) != nrow(S0)) {
+      .stop("S1 and S0 must have same number of rows for statistic = \"unit\".")
+    }
+    out <- int1 - int0
+    if (!is.null(rownames(S1))) rownames(out) <- rownames(S1)
+    return(out)
   }
 
   if (statistic == "mean") {
-    est <- rowMeans(mu1_mat) - rowMeans(mu0_mat)
+    estimate <- colMeans(int1, na.rm = TRUE) - colMeans(int0, na.rm = TRUE)
   } else {
-    est <- apply(mu1_mat, 1, stats::median) - apply(mu0_mat, 1, stats::median)
+    estimate <- apply(int1, 2, stats::median, na.rm = TRUE) -
+      apply(int0, 2, stats::median, na.rm = TRUE)
   }
 
-  data.frame(s = s_grid, estimate = est)
+  data.frame(s = s_grid, estimate = as.numeric(estimate))
+}
+
+#' Conditional tvRMST
+#'
+#' @param S Survival matrix/data.frame (rows = units, cols = time).
+#' @param time Numeric strictly increasing time vector.
+#' @param s_grid Landmark times.
+#' @param tau Positive window length.
+#' @param eps Positivity threshold for `S(s)`.
+#' @param statistic One of `"mean"`, `"median"`, `"unit"`.
+#' @return For summary statistics: data.frame `s`, `estimate`.
+#'   For `statistic = "unit"`: numeric matrix n_units x length(s_grid).
+#' @export
+tvrmst_cond <- function(S, time, s_grid, tau, eps = 1e-8,
+                        statistic = c("mean", "median", "unit")) {
+  S <- validate_surv_input(S, time, name = "S")
+  statistic <- match.arg(statistic)
+  time <- as.numeric(time)
+  .validate_landmark(s_grid, tau)
+
+  if (!is.numeric(eps) || length(eps) != 1 || !is.finite(eps) || eps <= 0 || eps >= 1) {
+    .stop("`eps` must be a single number in (0,1).")
+  }
+
+  num <- .window_integral_matrix(S, time, s_grid, tau)
+  denom <- .surv_at(time, S, s_grid)
+
+  mu <- matrix(NA_real_, nrow = nrow(S), ncol = length(s_grid))
+  ok <- denom >= eps
+  mu[ok] <- num[ok] / denom[ok]
+
+  if (!is.null(rownames(S))) rownames(mu) <- rownames(S)
+  colnames(mu) <- as.character(s_grid)
+
+  if (statistic == "unit") {
+    return(mu)
+  }
+
+  if (statistic == "mean") {
+    estimate <- colMeans(mu, na.rm = TRUE)
+  } else {
+    estimate <- apply(mu, 2, stats::median, na.rm = TRUE)
+  }
+
+  data.frame(s = s_grid, estimate = as.numeric(estimate))
+}
+
+#' Difference in conditional tvRMST between arms
+#'
+#' @param S1 Arm-1 survival matrix/data.frame (rows = units, cols = time).
+#' @param S0 Arm-0 survival matrix/data.frame (rows = units, cols = time).
+#' @param time Numeric strictly increasing time vector.
+#' @param s_grid Landmark times.
+#' @param tau Positive window length.
+#' @param eps Positivity threshold.
+#' @param statistic One of `"mean"`, `"median"`, `"unit"`.
+#' @return For summary statistics: data.frame `s`, `estimate`.
+#'   For `statistic = "unit"`: numeric matrix n_units x length(s_grid).
+#' @export
+tvrmst_diff <- function(S1, S0, time, s_grid, tau, eps = 1e-8,
+                        statistic = c("mean", "median", "unit")) {
+  S1 <- validate_surv_input(S1, time, name = "S1")
+  S0 <- validate_surv_input(S0, time, name = "S0")
+  statistic <- match.arg(statistic)
+  time <- as.numeric(time)
+
+  mu1 <- tvrmst_cond(S1, time, s_grid, tau, eps = eps, statistic = "unit")
+  mu0 <- tvrmst_cond(S0, time, s_grid, tau, eps = eps, statistic = "unit")
+
+  if (statistic == "unit") {
+    if (nrow(mu1) != nrow(mu0)) {
+      .stop("S1 and S0 must have same number of rows for statistic = \"unit\".")
+    }
+    out <- mu1 - mu0
+    if (!is.null(rownames(S1))) rownames(out) <- rownames(S1)
+    return(out)
+  }
+
+  if (statistic == "mean") {
+    estimate <- colMeans(mu1, na.rm = TRUE) - colMeans(mu0, na.rm = TRUE)
+  } else {
+    estimate <- apply(mu1, 2, stats::median, na.rm = TRUE) -
+      apply(mu0, 2, stats::median, na.rm = TRUE)
+  }
+
+  data.frame(s = s_grid, estimate = as.numeric(estimate))
 }

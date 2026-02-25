@@ -8,5 +8,6 @@
 "_PACKAGE"
 
 utils::globalVariables(c(
-  ".data", "arm", "estimate", "lower", "s", "survival", "time", "upper", "value"
+  ".data", "arm", "estimate", "group", "id", "lower", "rmst", "s",
+  "survival", "tau", "time", "upper", "value"
 ))

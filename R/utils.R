@@ -1,4 +1,4 @@
-# internal helpers 
+# internal helpers
 
 .stop <- function(...) stop(sprintf(...), call. = FALSE)
 
@@ -10,16 +10,7 @@
 }
 
 .coerce_unit_time <- function(S, time, name = "S") {
-  .check_time(time)
-  if (is.data.frame(S)) S <- as.matrix(S)
-  if (!is.matrix(S)) .stop("`%s` must be a numeric matrix or data.frame.", name)
-  if (!is.numeric(S)) .stop("`%s` must be numeric.", name)
-  if (ncol(S) != length(time)) {
-    .stop("`%s` must be n_units \u00d7 n_time (columns correspond to `time`). Ensure ncol(%s) == length(time).",
-          name, name)
-  }
-  if (any(!is.finite(S))) .stop("`%s` contains non-finite values.", name)
-  S
+  validate_surv_input(S, time, name = name)
 }
 
 .check_survmat <- function(t, S, name = "S") {
@@ -69,21 +60,20 @@
   t(out)
 }
 
-# ensure grid includes time 0 (with S(0)=1) for integration from 0
-# if time already has 0, leave as-is
-.extend_to_zero <- function(t, S) {
-  if (min(t) > 0) {
-    t <- c(0, t)
-    S <- cbind(rep(1, nrow(S)), S)
+# linear interpolation for RMST-like trajectories
+# returns nrow(Y) x length(xout)
+.linear_at <- function(t, Y, xout) {
+  xout <- as.numeric(xout)
+  if (!is.matrix(Y)) Y <- as.matrix(Y)
+  out <- vapply(
+    seq_len(nrow(Y)),
+    function(i) {
+      stats::approx(t, Y[i, ], xout = xout, rule = 2)$y
+    },
+    FUN.VALUE = numeric(length(xout))
+  )
+  if (is.vector(xout)) {
+    dim(out) <- c(length(xout), nrow(Y))
   }
-  list(t = t, S = S)
-}
-
-# ensure grid includes tau endpoint for integration up to tau (constant extension)
-.extend_to_tau <- function(t, S, tau) {
-  if (max(t) < tau) {
-    t <- c(t, tau)
-    S <- cbind(S, S[, ncol(S), drop = FALSE])
-  }
-  list(t = t, S = S)
+  t(out)
 }

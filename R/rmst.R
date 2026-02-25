@@ -1,139 +1,140 @@
-#' RMST at a single horizon tau
+#' Dynamic RMST on the provided time grid
 #'
-#' RMST(tau) = \eqn{\int_0^\tau S(u)\,du} computed by trapezoid rule on the grid.
+#' @param S Survival predictions as matrix/data.frame with rows = units and
+#'   columns = time points.
+#' @param time Numeric strictly increasing time vector.
+#' @return Numeric matrix of shape n_units x length(time).
+#' @export
+rmst_dynamic <- function(S, time) {
+  S <- validate_surv_input(S, time, name = "S")
+  time <- as.numeric(time)
+
+  n_units <- nrow(S)
+  n_time <- ncol(S)
+  out <- matrix(0, nrow = n_units, ncol = n_time)
+
+  if (n_time > 1) {
+    dt <- diff(time)
+    mids <- (S[, -n_time, drop = FALSE] + S[, -1, drop = FALSE]) / 2
+    incr <- sweep(mids, 2, dt, "*")
+    out[, -1] <- t(apply(incr, 1, cumsum))
+  }
+
+  if (!is.null(rownames(S))) rownames(out) <- rownames(S)
+  colnames(out) <- as.character(time)
+  out
+}
+
+#' RMST at a fixed horizon
 #'
-#' @param S Survival matrix (n_units x n_time).
-#' @param time Numeric time grid (length n_time).
-#' @param tau Nonnegative scalar horizon.
-#' @return Numeric vector of length nrow(S).
-#' @examples
-#' t <- seq(0, 5, by = 1)
-#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' rmst_tau(S, t, tau = 3)
+#' @param S Survival predictions as matrix/data.frame with rows = units and
+#'   columns = time points.
+#' @param time Numeric strictly increasing time vector.
+#' @param tau Numeric scalar horizon.
+#' @return Numeric vector length n_units. Attribute `tau_used` records the grid
+#'   time used after nearest-grid snapping.
 #' @export
 rmst_tau <- function(S, time, tau) {
-  S <- .coerce_unit_time(S, time, "S")
-  if (!is.numeric(tau) || length(tau) != 1 || !is.finite(tau) || tau < 0) {
-    .stop("`tau` must be a single nonnegative number.")
-  }
+  S <- validate_surv_input(S, time, name = "S")
   time <- as.numeric(time)
-  ez <- .extend_to_zero(time, S); time <- ez$t; S <- ez$S
-  dt <- diff(time)
-  S_left <- S[, -ncol(S), drop = FALSE]
-  S_right <- S[, -1, drop = FALSE]
-  S_mid <- (S_left + S_right) / 2
-  area_incr <- sweep(S_mid, 2, dt, "*")
-  rmst_no0 <- t(apply(area_incr, 1, cumsum))
-  rmst_mat <- cbind(0, rmst_no0)
 
-  if (tau <= time[1]) {
-    out <- rep(tau, nrow(S))
-    if (!is.null(rownames(S))) names(out) <- rownames(S)
-    return(out)
+  if (!is.numeric(tau) || length(tau) != 1 || !is.finite(tau)) {
+    .stop("`tau` must be a single finite numeric value.")
   }
 
-  if (tau >= time[length(time)]) {
-    tau_idx <- length(time)
-  } else {
-    tau_idx <- max(which(time <= tau))
-  }
+  rmst_mat <- rmst_dynamic(S, time)
+  idx <- which.min(abs(time - tau))
+  out <- rmst_mat[, idx]
 
-  out <- rmst_mat[, tau_idx]
-  if (tau > time[tau_idx]) {
-    dt_last <- tau - time[tau_idx]
-    out <- out + S[, tau_idx] * dt_last
-  }
   if (!is.null(rownames(S))) {
     names(out) <- rownames(S)
   } else {
     names(out) <- paste0("unit", seq_len(nrow(S)))
   }
+  attr(out, "tau_used") <- time[idx]
   out
 }
 
-#' RMST curve evaluated at tau = `time[-1]`
+#' RMST curve summarized across units
 #'
-#' Returns a data.frame with tau and RMST(tau) for each unit column.
-#'
-#' @param S Survival matrix (n_units x n_time).
-#' @param time Numeric time grid (length n_time).
-#' @return data.frame with column tau and one column per unit.
-#' @examples
-#' t <- seq(0, 5, by = 1)
-#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' rmst_curve(S, t)
+#' @param S Survival predictions as matrix/data.frame with rows = units and
+#'   columns = time points.
+#' @param time Numeric strictly increasing time vector.
+#' @param statistic Summary statistic across units: `"mean"` or `"median"`.
+#' @param probs Quantiles for interval summary when `conf = NULL`.
+#' @param conf Optional confidence level in (0,1) for normal-approx intervals.
+#' @return data.frame with columns `tau`, `estimate`, and optional `lower`,
+#'   `upper`.
 #' @export
-rmst_curve <- function(S, time) {
-  S <- .coerce_unit_time(S, time, "S")
+rmst_curve <- function(S, time,
+                       statistic = c("mean", "median"),
+                       probs = c(0.025, 0.975),
+                       conf = NULL) {
+  S <- validate_surv_input(S, time, name = "S")
+  statistic <- match.arg(statistic)
   time <- as.numeric(time)
-  ez <- .extend_to_zero(time, S); time <- ez$t; S <- ez$S
-  dt <- diff(time)
-  S_left <- S[, -ncol(S), drop = FALSE]
-  S_right <- S[, -1, drop = FALSE]
-  S_mid <- (S_left + S_right) / 2
-  area_incr <- sweep(S_mid, 2, dt, "*")
-  rmst_mat <- t(apply(area_incr, 1, cumsum))
-  out <- data.frame(tau = time[-1], t(rmst_mat), check.names = FALSE)
-  if (!is.null(rownames(S))) {
-    names(out)[-1] <- rownames(S)
+
+  rmst_mat <- rmst_dynamic(S, time)
+
+  if (statistic == "mean") {
+    estimate <- colMeans(rmst_mat, na.rm = TRUE)
   } else {
-    names(out)[-1] <- paste0("unit", seq_len(nrow(S)))
+    estimate <- apply(rmst_mat, 2, stats::median, na.rm = TRUE)
   }
+
+  out <- data.frame(tau = time, estimate = estimate)
+
+  if (!is.null(conf)) {
+    if (!is.numeric(conf) || length(conf) != 1 || !is.finite(conf) || conf <= 0 || conf >= 1) {
+      .stop("`conf` must be a single number in (0,1).")
+    }
+    z <- stats::qnorm(1 - (1 - conf) / 2)
+    if (statistic == "mean") {
+      se <- apply(rmst_mat, 2, stats::sd, na.rm = TRUE) / sqrt(nrow(rmst_mat))
+    } else {
+      se <- apply(rmst_mat, 2, stats::mad, constant = 1.4826, na.rm = TRUE) / sqrt(nrow(rmst_mat))
+    }
+    out$lower <- estimate - z * se
+    out$upper <- estimate + z * se
+    return(out)
+  }
+
+  if (!is.null(probs)) {
+    if (!is.numeric(probs) || length(probs) != 2 || any(!is.finite(probs)) ||
+        any(probs < 0) || any(probs > 1) || probs[1] >= probs[2]) {
+      .stop("`probs` must be two increasing probabilities in [0,1].")
+    }
+    qmat <- apply(
+      rmst_mat,
+      2,
+      stats::quantile,
+      probs = probs,
+      na.rm = TRUE,
+      names = FALSE
+    )
+    out$lower <- as.numeric(qmat[1, ])
+    out$upper <- as.numeric(qmat[2, ])
+  }
+
   out
 }
 
-#' Individual (dynamic) RMST curves aligned to the time grid
+#' Delta RMST curve from a wide rmst-curve table
 #'
-#' Returns RMST values for each unit at every grid time, including tau = 0.
-#'
-#' @param S Survival matrix (n_units x n_time).
-#' @param time Numeric time grid (length n_time).
-#' @return data.frame with column tau (including 0) and one column per unit.
-#' @examples
-#' t <- seq(0, 5, by = 1)
-#' S <- rbind(A = exp(-0.2 * t), B = exp(-0.3 * t))
-#' rmst_dynamic(S, t)
-#' @export
-rmst_dynamic <- function(S, time) {
-  S <- .coerce_unit_time(S, time, "S")
-  time <- as.numeric(time)
-  ez <- .extend_to_zero(time, S); time <- ez$t; S <- ez$S
-  dt <- diff(time)
-  S_left <- S[, -ncol(S), drop = FALSE]
-  S_right <- S[, -1, drop = FALSE]
-  S_mid <- (S_left + S_right) / 2
-  area_incr <- sweep(S_mid, 2, dt, "*")
-  rmst_no0 <- t(apply(area_incr, 1, cumsum))
-  rmst_mat <- cbind(0, rmst_no0)
-  out <- data.frame(tau = time, t(rmst_mat), check.names = FALSE)
-  if (!is.null(rownames(S))) {
-    names(out)[-1] <- rownames(S)
-  } else {
-    names(out)[-1] <- paste0("unit", seq_len(nrow(S)))
-  }
-  out
-}
-
-#' Delta RMST curve between two arms in an rmst_curve() output
-#'
-#' @param rmst_curve_df Output of rmst_curve().
+#' @param rmst_curve_df Wide data.frame with `tau` and one column per arm.
 #' @param arm1 Column name for arm 1.
 #' @param arm0 Column name for arm 0.
-#' @return data.frame(tau, delta)
-#' @examples
-#' t <- seq(0, 5, by = 1)
-#' S0 <- exp(-0.2 * t)
-#' S1 <- exp(-0.15 * t)
-#' S <- rbind(Control = S0, Treatment = S1)
-#' rc <- rmst_curve(S, t)
-#' rmst_delta_curve(rc, "Treatment", "Control")
+#' @return data.frame with columns `tau`, `estimate`.
 #' @export
 rmst_delta_curve <- function(rmst_curve_df, arm1, arm0) {
   if (!is.data.frame(rmst_curve_df) || !"tau" %in% names(rmst_curve_df)) {
-    .stop("`rmst_curve_df` must come from rmst_curve().")
+    .stop("`rmst_curve_df` must be a data.frame with column `tau`.")
   }
   if (!arm1 %in% names(rmst_curve_df) || !arm0 %in% names(rmst_curve_df)) {
-    .stop("`arm1` and `arm0` must be columns in rmst_curve_df.")
+    .stop("`arm1` and `arm0` must be columns in `rmst_curve_df`.")
   }
-  data.frame(tau = rmst_curve_df$tau, delta = rmst_curve_df[[arm1]] - rmst_curve_df[[arm0]])
+  data.frame(
+    tau = rmst_curve_df$tau,
+    estimate = rmst_curve_df[[arm1]] - rmst_curve_df[[arm0]]
+  )
 }

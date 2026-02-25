@@ -1,54 +1,61 @@
-#' Summarize Delta_c(s, tau) from a list of replicate survival matrices
+#' Bootstrap summary for tvRMST differences
 #'
-#' @param time Time grid
-#' @param reps List of length R, each element list(S1=..., S0=...)
-#' @param s_grid Landmark grid
-#' @param tau Window length
-#' @param eps Stability threshold
-#' @param conf Confidence level
-#' @return data.frame(s, estimate, lower, upper)
-#' @examples
-#' set.seed(1)
-#' t <- seq(0, 5, by = 1)
-#' s_grid <- c(0, 1, 2)
-#' reps <- lapply(1:10, function(i) {
-#'   list(
-#'     S1 = matrix(exp(-(0.15 + runif(1, -0.02, 0.02)) * t), nrow = 1),
-#'     S0 = matrix(exp(-(0.20 + runif(1, -0.02, 0.02)) * t), nrow = 1)
-#'   )
-#' })
-#' bootstrap_tvrmst_diff_reps(reps, t, s_grid, tau = 2, conf = 0.9)
+#' @param reps List of bootstrap replicates. Each element must be
+#'   `list(S1 = <matrix/data.frame>, S0 = <matrix/data.frame>)`.
+#' @param time Numeric strictly increasing time vector.
+#' @param s_grid Landmark times.
+#' @param tau Positive window length.
+#' @param eps Positivity threshold passed to `tvrmst_diff()`.
+#' @param conf Confidence level in (0,1).
+#' @param statistic Summary statistic passed to `tvrmst_diff()`.
+#' @return data.frame with columns `s`, `estimate`, `lower`, `upper`.
 #' @export
-bootstrap_tvrmst_diff_reps <- function(reps, time, s_grid, tau, eps = 1e-8, conf = 0.95) {
-  if (!is.list(reps) || length(reps) < 10) .stop("`reps` must be a list of >= 10 replicates.")
-  if (is.null(reps[[1]]$S1) || is.null(reps[[1]]$S0)) .stop("Each replicate must be list(S1=..., S0=...).")
+bootstrap_tvrmst_diff_reps <- function(reps, time, s_grid, tau,
+                                       eps = 1e-8, conf = 0.95,
+                                       statistic = "mean") {
+  if (!is.list(reps) || length(reps) < 2) {
+    .stop("`reps` must be a list with at least 2 replicates.")
+  }
+  if (!is.numeric(conf) || length(conf) != 1 || !is.finite(conf) || conf <= 0 || conf >= 1) {
+    .stop("`conf` must be a single number in (0,1).")
+  }
 
-  S1_first <- .coerce_unit_time(reps[[1]]$S1, time, "reps[[1]]$S1")
-  S0_first <- .coerce_unit_time(reps[[1]]$S0, time, "reps[[1]]$S0")
-  if (nrow(S1_first) != nrow(S0_first)) .stop("Replicate 1: S1 and S0 must have same number of rows.")
-  if (nrow(S1_first) != 1) .stop("Replicates must contain a single curve per arm.")
+  statistic <- match.arg(statistic, c("mean", "median"))
 
   R <- length(reps)
   boot_mat <- matrix(NA_real_, nrow = R, ncol = length(s_grid))
+
   for (r in seq_len(R)) {
-    S1 <- .coerce_unit_time(reps[[r]]$S1, time, sprintf("reps[[%d]]$S1", r))
-    S0 <- .coerce_unit_time(reps[[r]]$S0, time, sprintf("reps[[%d]]$S0", r))
-    if (nrow(S1) != nrow(S0)) .stop("Replicate %d: S1 and S0 must have same number of rows.", r)
-    if (nrow(S1) != 1) .stop("Replicate %d: each arm must contain a single curve.", r)
-    boot_mat[r, ] <- as.numeric(
-      tvrmst_diff(S1, S0, time, s_grid, tau, eps = eps, statistic = "unit")[[2]]
+    rep_r <- reps[[r]]
+    if (!is.list(rep_r) || is.null(rep_r$S1) || is.null(rep_r$S0)) {
+      .stop("Each replicate must be list(S1 = <matrix/data.frame>, S0 = <matrix/data.frame>).")
+    }
+
+    validate_surv_input(rep_r$S1, time, name = sprintf("reps[[%d]]$S1", r))
+    validate_surv_input(rep_r$S0, time, name = sprintf("reps[[%d]]$S0", r))
+
+    dr <- tvrmst_diff(
+      S1 = rep_r$S1,
+      S0 = rep_r$S0,
+      time = time,
+      s_grid = s_grid,
+      tau = tau,
+      eps = eps,
+      statistic = statistic
     )
+
+    if (!is.data.frame(dr) || !all(c("s", "estimate") %in% names(dr))) {
+      .stop("Each bootstrap replicate must produce a data.frame with columns `s` and `estimate`.")
+    }
+
+    boot_mat[r, ] <- as.numeric(dr$estimate)
   }
 
-  S1_mean <- Reduce(`+`, lapply(reps, function(rp) .coerce_unit_time(rp$S1, time, "rep$S1"))) / R
-  S0_mean <- Reduce(`+`, lapply(reps, function(rp) .coerce_unit_time(rp$S0, time, "rep$S0"))) / R
-  est <- as.numeric(
-    tvrmst_diff(S1_mean, S0_mean, time, s_grid, tau, eps = eps, statistic = "unit")[[2]]
-  )
-
   alpha <- 1 - conf
-  lower <- apply(boot_mat, 2, stats::quantile, probs = alpha/2, na.rm = TRUE, names = FALSE)
-  upper <- apply(boot_mat, 2, stats::quantile, probs = 1-alpha/2, na.rm = TRUE, names = FALSE)
-
-  data.frame(s = s_grid, estimate = est, lower = lower, upper = upper)
+  data.frame(
+    s = s_grid,
+    estimate = colMeans(boot_mat, na.rm = TRUE),
+    lower = apply(boot_mat, 2, stats::quantile, probs = alpha / 2, na.rm = TRUE, names = FALSE),
+    upper = apply(boot_mat, 2, stats::quantile, probs = 1 - alpha / 2, na.rm = TRUE, names = FALSE)
+  )
 }
