@@ -8,7 +8,10 @@ plot_rmst_two_arms(
   xA,
   xB,
   labels = c("Arm A", "Arm B"),
-  title = "Dynamic RMST (Two Arms)"
+  title = NULL,
+  xlab = "Time (tau)",
+  ylab = "RMST(tau)",
+  curve_colors = c("#1B6CA8", "#D95F02")
 )
 }
 \arguments{
@@ -18,7 +21,13 @@ plot_rmst_two_arms(
 
 \item{labels}{Two legend labels.}
 
-\item{title}{Plot title.}
+\item{title}{Plot title. Use \code{NULL} to omit it.}
+
+\item{xlab}{X-axis label.}
+
+\item{ylab}{Y-axis label.}
+
+\item{curve_colors}{Colors for the two curves.}
 }
 \value{
 A \code{ggplot} object.

@@ -1,3 +1,18 @@
+# Internal plot theme shared by package plotting helpers.
+.tvrmst_plot_theme <- function() {
+  ggplot2::theme_minimal(base_size = 12) +
+    ggplot2::theme(
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.grid.major.x = ggplot2::element_blank(),
+      panel.grid.major.y = ggplot2::element_line(color = "grey85", linewidth = 0.3),
+      axis.title = ggplot2::element_text(face = "bold"),
+      axis.text = ggplot2::element_text(color = "grey20"),
+      plot.title = ggplot2::element_text(face = "bold", hjust = 0),
+      legend.title = ggplot2::element_blank(),
+      legend.position = "top"
+    )
+}
+
 #' Plot individual dynamic RMST curves by group
 #'
 #' @param res Result from [rmst_dynamic()] containing `individual` and `time`.
@@ -47,7 +62,8 @@ plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
       linewidth = 1
     ) +
     ggplot2::facet_wrap(~group) +
-    ggplot2::labs(title = title, x = "tau", y = "RMST_i(tau)")
+    ggplot2::labs(title = title, x = "tau", y = "RMST_i(tau)") +
+    .tvrmst_plot_theme()
 }
 
 #' Plot mean RMST curves for two arms
@@ -55,16 +71,23 @@ plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
 #' @param xA A `survmat` object for arm A.
 #' @param xB A `survmat` object for arm B.
 #' @param labels Two legend labels.
-#' @param title Plot title.
+#' @param title Plot title. Use `NULL` to omit it.
+#' @param xlab X-axis label.
+#' @param ylab Y-axis label.
+#' @param curve_colors Colors for the two curves.
 #'
 #' @return A `ggplot` object.
 #' @export
 plot_rmst_two_arms <- function(xA, xB,
                                labels = c("Arm A", "Arm B"),
-                               title = "Dynamic RMST (Two Arms)") {
+                               title = NULL,
+                               xlab = "Time (tau)",
+                               ylab = "RMST(tau)",
+                               curve_colors = c("#1B6CA8", "#D95F02")) {
   .require_ggplot2()
   stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
   stopifnot(length(xA$time) == length(xB$time), all(abs(xA$time - xB$time) < 1e-12))
+  stopifnot(length(labels) == 2L, length(curve_colors) == 2L)
 
   rA <- rmst_dynamic(xA, by = NULL)
   rB <- rmst_dynamic(xB, by = NULL)
@@ -74,10 +97,13 @@ plot_rmst_two_arms <- function(xA, xB,
     data.frame(group = labels[2], tau = rB$time, estimate = rB$mean)
   )
 
-  ggplot2::ggplot(df, ggplot2::aes(x = tau, y = estimate, group = group)) +
-    ggplot2::geom_line(ggplot2::aes(linetype = group), linewidth = 1) +
-    ggplot2::labs(title = title, x = "Time (tau)", y = "RMST(tau)") +
-    ggplot2::theme_minimal()
+  names(curve_colors) <- labels
+
+  ggplot2::ggplot(df, ggplot2::aes(x = tau, y = estimate, color = group)) +
+    ggplot2::geom_line(linewidth = 1) +
+    ggplot2::scale_color_manual(values = curve_colors) +
+    ggplot2::labs(title = title, x = xlab, y = ylab) +
+    .tvrmst_plot_theme()
 }
 
 #' Plot a delta curve
@@ -95,7 +121,8 @@ plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", yla
   df <- data.frame(t = grid, delta = delta)
   ggplot2::ggplot(df, ggplot2::aes(x = t, y = delta)) +
     ggplot2::geom_line() +
-    ggplot2::labs(title = title, x = xlab, y = ylab)
+    ggplot2::labs(title = title, x = xlab, y = ylab) +
+    .tvrmst_plot_theme()
 }
 
 #' Plot bootstrap estimate with confidence ribbon
@@ -122,5 +149,6 @@ plot_boot_curve <- function(boot, grid = NULL, title = "Bootstrap curve", xlab =
   ggplot2::ggplot(df, ggplot2::aes(x = t, y = estimate)) +
     ggplot2::geom_line() +
     ggplot2::geom_ribbon(ggplot2::aes(ymin = lo, ymax = hi), alpha = 0.2) +
-    ggplot2::labs(title = title, x = xlab, y = ylab)
+    ggplot2::labs(title = title, x = xlab, y = ylab) +
+    .tvrmst_plot_theme()
 }
