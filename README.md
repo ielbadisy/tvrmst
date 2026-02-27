@@ -1,67 +1,77 @@
+
 # tvrmst
 
 **Time-Varying Restricted Mean Survival Time from Survival Matrices**
 
-`tvrmst` is a matrix-first framework for computing dynamic restricted mean survival time (RMST) curves, treatment contrasts, bootstrap confidence intervals, and publication-ready visualizations.
+`tvrmst` is a matrix-first framework for computing dynamic restricted
+mean survival time (RMST) curves, treatment contrasts, and bootstrap
+confidence intervals.
 
-The package separates survival estimation from functional summarization and operates directly on subject-level survival probability matrices.
+The package separates survival estimation from functional summarization
+and operates directly on subject-level survival probability matrices.
 
 ## Motivation
 
-Restricted mean survival time (RMST) is defined as:
+Restricted mean survival time (RMST) is defined as
 
-\[
+$$
 \mathrm{RMST}(\tau) = \int_0^\tau S(u)\,du.
-\]
+$$
 
-RMST is often more interpretable and robust than hazard ratios, especially under non-proportional hazards. Most implementations target a single horizon \(\tau\). `tvrmst` extends this to the full dynamic curve:
+RMST is often more interpretable and robust than hazard ratios,
+especially under non-proportional hazards. Most implementations target a
+single horizon $\tau$. `tvrmst` extends this to the full dynamic curve:
 
-\[
+$$
 \tau \mapsto \mathrm{RMST}(\tau).
-\]
+$$
 
 This enables:
 
 - Continuous-time treatment contrasts
+
 - Time-dependent benefit visualization
-- Model-agnostic post-processing of survival predictions
+
 - Individual-level RMST trajectories
 
 ## Mathematical Framework
 
-For subject \(i\), with predicted survival \(S_i(t)\):
+For subject $i$, with predicted survival $S_i(t)$:
 
-\[
+$$
 \mathrm{RMST}_i(\tau) = \int_0^\tau S_i(u)\,du.
-\]
+$$
 
 Population mean dynamic RMST:
 
-\[
+$$
 \mathrm{RMST}(\tau) = \frac{1}{n}\sum_{i=1}^{n}\mathrm{RMST}_i(\tau).
-\]
+$$
 
 Two-arm contrast (A vs B):
 
-\[
+$$
 \Delta(\tau) = \mathrm{RMST}_B(\tau) - \mathrm{RMST}_A(\tau).
-\]
+$$
 
-All integrals use deterministic trapezoidal integration on a common time grid.
+All integrals use deterministic trapezoidal integration on a common time
+grid.
 
 ## Design Principles
 
-1. **Matrix-first abstraction**: rows are subjects, columns are time points.
-2. **Model-agnostic workflow**: works with any upstream survival estimator.
-3. **Deterministic integration**: transparent and reproducible numerics.
-4. **Unbalanced-arm support**: group sizes can differ.
-5. **Minimal API**: focused on core estimands, inference, and plotting.
+1.  **Matrix-first abstraction**: rows are subjects, columns are time
+    points.
 
-`tvrmst` does not fit survival models.
+2.  **Model-agnostic workflow**: works with any upstream survival
+    estimator.
+
+3.  **Unbalanced-arm support**: group sizes can differ.
+
+> `tvrmst` does not fit survival models.
 
 ## Installation
 
-```r
+``` r
 # install.packages("remotes")
 remotes::install_github("your-username/tvrmst")
 ```
@@ -99,7 +109,8 @@ remotes::install_github("your-username/tvrmst")
 
 ### 1) Prepare two-arm survival matrices
 
-```r
+``` r
+library(tvrmst)
 set.seed(1)
 
 time <- seq(0, 5, by = 0.05)
@@ -119,26 +130,27 @@ x_all <- bind_survmat(xA, xB)
 
 ### 2) Dynamic RMST
 
-```r
+``` r
 res_all <- rmst_dynamic(x_all)
 ```
 
 Key outputs:
 
 - `res_all$individual`: subject-level dynamic RMST curves
+
 - `res_all$mean`: population mean dynamic RMST curve
 
 ### 3) Two-arm contrast
 
-```r
+``` r
 d <- rmst_delta(xA, xB)
 ```
 
-Returns full \(\Delta(\tau)\) over the grid.
+Returns full $\Delta(\tau)$ over the grid.
 
 ### 4) Bootstrap confidence intervals
 
-```r
+``` r
 boot <- boot_rmst_delta(xA, xB, R = 300, seed = 1)
 ```
 
@@ -146,23 +158,29 @@ Computes percentile confidence bands pointwise along the delta curve.
 
 ## Visualization
 
-```r
+``` r
 plot_rmst_individual_by_group(res_all, group = x_all$group)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
 plot_rmst_two_arms(xA, xB)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+
+``` r
 plot_delta_curve(d$time, d$delta)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
+
+``` r
 plot_boot_curve(boot)
 ```
 
-## End-to-End Example
-
-```r
-d <- rmst_delta(xA, xB)
-boot <- boot_rmst_delta(xA, xB, R = 200, seed = 1)
-
-plot_rmst_two_arms(xA, xB)
-plot_delta_curve(d$time, d$delta)
-plot_boot_curve(boot)
-```
+![](README_files/figure-gfm/unnamed-chunk-6-4.png)<!-- -->
 
 ## Relation to Existing RMST Workflows
 
@@ -177,7 +195,7 @@ This supports modern benchmarking and production survival pipelines.
 
 ## Citation
 
-```r
+``` r
 # Installed package:
 citation("tvrmst")
 
