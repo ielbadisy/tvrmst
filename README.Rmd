@@ -142,7 +142,7 @@ Key outputs:
 d <- rmst_delta(xA, xB)
 ```
 
-Returns full \(\Delta(\tau)\) over the grid.
+Returns full $\Delta(\tau)$ over the grid.
 
 ### 4) Bootstrap confidence intervals
 
