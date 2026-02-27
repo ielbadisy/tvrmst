@@ -1,297 +1,126 @@
-#' Plot survival curves from unit x time matrices
+#' Plot individual dynamic RMST curves by group
 #'
-#' @param S0 Control survival matrix/data.frame (rows = units, cols = time).
-#' @param S1 Treatment survival matrix/data.frame (rows = units, cols = time).
-#' @param time Numeric time vector.
-#' @param labels Legend labels.
-#' @param title Optional title.
-#' @param show `"mean"` uses row means; `"first"` uses first row.
-#' @return A ggplot object.
+#' @param res Result from [rmst_dynamic()] containing `individual` and `time`.
+#' @param group Group vector aligned with rows of `res$individual`.
+#' @param n_show_per_group Maximum number of individual curves shown per group.
+#' @param title Plot title.
+#'
+#' @return A `ggplot` object.
 #' @export
-plot_survival_curves <- function(S0, S1, time,
-                                 labels = c("Control", "Treatment"),
-                                 title = NULL,
-                                 show = c("mean", "first")) {
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    .stop("ggplot2 is required for plotting.")
-  }
-  show <- match.arg(show)
+plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
+                                          title = "Individual dynamic RMST by group") {
+  .require_ggplot2()
+  stopifnot(!is.null(res$individual))
 
-  if (!is.matrix(S0) && !is.data.frame(S0)) .stop("`S0` must be a matrix or data.frame.")
-  if (!is.matrix(S1) && !is.data.frame(S1)) .stop("`S1` must be a matrix or data.frame.")
-  S0 <- as.matrix(S0)
-  S1 <- as.matrix(S1)
-  if (!is.numeric(S0) || !is.numeric(S1)) .stop("`S0` and `S1` must be numeric.")
-  if (!is.numeric(time) || length(time) < 2 || any(diff(time) <= 0)) {
-    .stop("`time` must be numeric, strictly increasing, and length >= 2.")
-  }
-  if (ncol(S0) != length(time) || ncol(S1) != length(time)) {
-    .stop("`S0` and `S1` must have ncol(.) == length(time).")
-  }
+  ind <- res$individual
+  stopifnot(nrow(ind) == length(group))
+  group <- as.factor(group)
 
-  y0 <- if (show == "mean") colMeans(S0, na.rm = TRUE) else S0[1, ]
-  y1 <- if (show == "mean") colMeans(S1, na.rm = TRUE) else S1[1, ]
+  idx <- unlist(lapply(levels(group), function(g) {
+    ids <- which(group == g)
+    if (length(ids) <= n_show_per_group) ids else sample(ids, n_show_per_group)
+  }), use.names = FALSE)
+
+  ind_sub <- ind[idx, , drop = FALSE]
+  g_sub <- group[idx]
+  k <- nrow(ind_sub)
+  m <- ncol(ind_sub)
 
   df <- data.frame(
-    time = rep(time, 2),
-    estimate = c(y0, y1),
-    arm = rep(labels, each = length(time))
+    id = rep(seq_len(k), each = m),
+    group = rep(g_sub, each = m),
+    tau = rep(res$time, times = k),
+    estimate = as.vector(t(ind_sub))
   )
 
-  ggplot2::ggplot(df, ggplot2::aes(time, estimate, color = arm)) +
-    ggplot2::geom_line(linewidth = 1) +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(title = title, x = "Time", y = "Survival")
+  df_mean <- do.call(rbind, lapply(levels(group), function(g) {
+    ids <- which(group == g)
+    data.frame(group = g, tau = res$time, mean = colMeans(ind[ids, , drop = FALSE]))
+  }))
+
+  ggplot2::ggplot(df, ggplot2::aes(x = tau, y = estimate, group = id)) +
+    ggplot2::geom_line(alpha = 0.25) +
+    ggplot2::geom_line(
+      data = df_mean,
+      ggplot2::aes(x = tau, y = mean),
+      inherit.aes = FALSE,
+      linewidth = 1
+    ) +
+    ggplot2::facet_wrap(~group) +
+    ggplot2::labs(title = title, x = "tau", y = "RMST_i(tau)")
 }
 
-#' Plot RMST curve object
+#' Plot mean RMST curves for two arms
 #'
-#' @param rmst_curve_df Data frame with `tau`, `estimate`, optional `lower`,
-#'   `upper`, and optional group column.
-#' @param title Optional title.
-#' @param group_col Optional grouping column name.
-#' @return A ggplot object.
-#' @export
-plot_rmst_curve <- function(rmst_curve_df, title = NULL, group_col = NULL) {
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    .stop("ggplot2 is required for plotting.")
-  }
-  if (!is.data.frame(rmst_curve_df) || !all(c("tau", "estimate") %in% names(rmst_curve_df))) {
-    .stop("`rmst_curve_df` must have columns `tau` and `estimate`.")
-  }
-
-  plot_df <- rmst_curve_df
-  if (!is.null(group_col)) {
-    if (!group_col %in% names(plot_df)) .stop("`group_col` is not a column in `rmst_curve_df`.")
-    plot_df$group <- as.character(plot_df[[group_col]])
-    p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = tau, y = estimate, color = group, fill = group, group = group))
-  } else {
-    p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = tau, y = estimate))
-  }
-
-  if (all(c("lower", "upper") %in% names(rmst_curve_df))) {
-    p <- p + ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = lower, ymax = upper),
-      alpha = 0.2,
-      color = NA
-    )
-  }
-
-  p +
-    ggplot2::geom_line(linewidth = 1) +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(title = title, x = "Horizon tau", y = "RMST")
-}
-
-#' Plot RMST delta curve
+#' @param xA A `survmat` object for arm A.
+#' @param xB A `survmat` object for arm B.
+#' @param labels Two legend labels.
+#' @param title Plot title.
 #'
-#' @param rmst_delta_df Data frame with `tau`, `estimate`, and optional
-#'   `lower`, `upper`.
-#' @param title Optional title.
-#' @return A ggplot object.
+#' @return A `ggplot` object.
 #' @export
-plot_rmst_delta <- function(rmst_delta_df, title = NULL) {
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    .stop("ggplot2 is required for plotting.")
-  }
-  if (!is.data.frame(rmst_delta_df) || !all(c("tau", "estimate") %in% names(rmst_delta_df))) {
-    .stop("`rmst_delta_df` must have columns `tau` and `estimate`.")
-  }
+plot_rmst_two_arms <- function(xA, xB,
+                               labels = c("Arm A", "Arm B"),
+                               title = "Dynamic RMST (Two Arms)") {
+  .require_ggplot2()
+  stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
+  stopifnot(length(xA$time) == length(xB$time), all(abs(xA$time - xB$time) < 1e-12))
 
-  p <- ggplot2::ggplot(rmst_delta_df, ggplot2::aes(tau, estimate))
+  rA <- rmst_dynamic(xA, by = NULL)
+  rB <- rmst_dynamic(xB, by = NULL)
 
-  if (all(c("lower", "upper") %in% names(rmst_delta_df))) {
-    p <- p + ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = lower, ymax = upper),
-      alpha = 0.2
-    )
-  }
-
-  p +
-    ggplot2::geom_line(linewidth = 1) +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(title = title, x = "Horizon tau", y = "Delta RMST")
-}
-
-#' Plot conditional tvRMST curves for two arms
-#'
-#' @param mu0_df Data frame with columns `s`, `estimate`, optional `lower`,
-#'   `upper` for control arm.
-#' @param mu1_df Data frame with columns `s`, `estimate`, optional `lower`,
-#'   `upper` for treatment arm.
-#' @param labels Legend labels.
-#' @param title Optional title.
-#' @return A ggplot object.
-#' @export
-plot_tvrmst <- function(mu0_df, mu1_df,
-                        labels = c("Control", "Treatment"),
-                        title = NULL) {
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    .stop("ggplot2 is required for plotting.")
-  }
-  req <- c("s", "estimate")
-  if (!is.data.frame(mu0_df) || !all(req %in% names(mu0_df))) {
-    .stop("`mu0_df` must have columns `s` and `estimate`.")
-  }
-  if (!is.data.frame(mu1_df) || !all(req %in% names(mu1_df))) {
-    .stop("`mu1_df` must have columns `s` and `estimate`.")
-  }
-
-  d0 <- mu0_df
-  d1 <- mu1_df
-  d0$arm <- labels[1]
-  d1$arm <- labels[2]
-  df <- rbind(d0, d1)
-
-  p <- ggplot2::ggplot(
-    df,
-    ggplot2::aes(x = s, y = estimate, color = arm, fill = arm)
+  df <- rbind(
+    data.frame(group = labels[1], tau = rA$time, estimate = rA$mean),
+    data.frame(group = labels[2], tau = rB$time, estimate = rB$mean)
   )
 
-  if (all(c("lower", "upper") %in% names(df))) {
-    p <- p + ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = lower, ymax = upper),
-      alpha = 0.2,
-      color = NA
-    )
-  }
-
-  p +
-    ggplot2::geom_line(linewidth = 1) +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(title = title, x = "Landmark s", y = "Conditional tvRMST")
+  ggplot2::ggplot(df, ggplot2::aes(x = tau, y = estimate, group = group)) +
+    ggplot2::geom_line(ggplot2::aes(linetype = group), linewidth = 1) +
+    ggplot2::labs(title = title, x = "Time (tau)", y = "RMST(tau)") +
+    ggplot2::theme_minimal()
 }
 
-#' Plot tvRMST difference (and bootstrap CI when available)
+#' Plot a delta curve
 #'
-#' @param delta_df Data frame with columns `s`, `estimate`, optional `lower`,
-#'   `upper`.
-#' @param title Optional title.
-#' @return A ggplot object.
+#' @param grid X-axis grid.
+#' @param delta Y values.
+#' @param title Plot title.
+#' @param xlab X-axis label.
+#' @param ylab Y-axis label.
+#'
+#' @return A `ggplot` object.
 #' @export
-plot_tvrmst_diff <- function(delta_df, title = NULL) {
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    .stop("ggplot2 is required for plotting.")
-  }
-  if (!is.data.frame(delta_df) || !all(c("s", "estimate") %in% names(delta_df))) {
-    .stop("`delta_df` must have columns `s` and `estimate`.")
-  }
-
-  p <- ggplot2::ggplot(delta_df, ggplot2::aes(s, estimate))
-
-  if (all(c("lower", "upper") %in% names(delta_df))) {
-    p <- p + ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = lower, ymax = upper),
-      alpha = 0.2
-    )
-  }
-
-  p +
-    ggplot2::geom_line(linewidth = 1) +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(title = title, x = "Landmark s", y = "Delta conditional tvRMST")
+plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", ylab = "Delta") {
+  .require_ggplot2()
+  df <- data.frame(t = grid, delta = delta)
+  ggplot2::ggplot(df, ggplot2::aes(x = t, y = delta)) +
+    ggplot2::geom_line() +
+    ggplot2::labs(title = title, x = xlab, y = ylab)
 }
 
-#' Plot individual RMST trajectories
+#' Plot bootstrap estimate with confidence ribbon
 #'
-#' @param RMST_mat Numeric matrix from `rmst_dynamic()` (n_units x n_time).
-#' @param group Optional grouping vector of length n_units.
-#' @param max_units Maximum number of units to plot.
-#' @param alpha Line alpha.
-#' @param title Optional title.
-#' @return A ggplot object.
-#' @export
-plot_rmst_individual <- function(RMST_mat, group = NULL,
-                                 max_units = 150,
-                                 alpha = 0.1,
-                                 title = NULL) {
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    .stop("ggplot2 is required for plotting.")
-  }
-  if (!is.matrix(RMST_mat) || !is.numeric(RMST_mat)) {
-    .stop("`RMST_mat` must be a numeric matrix from rmst_dynamic().")
-  }
-
-  n_units <- nrow(RMST_mat)
-  if (!is.null(group) && length(group) != n_units) {
-    .stop("`group` must be NULL or length nrow(RMST_mat).")
-  }
-
-  ids <- seq_len(n_units)
-  if (n_units > max_units) {
-    set.seed(1)
-    ids <- sort(sample(ids, max_units))
-  }
-
-  tau <- suppressWarnings(as.numeric(colnames(RMST_mat)))
-  if (any(!is.finite(tau))) tau <- seq_len(ncol(RMST_mat))
-
-  df <- data.frame(
-    id = rep(ids, each = length(tau)),
-    tau = rep(tau, times = length(ids)),
-    rmst = as.vector(t(RMST_mat[ids, , drop = FALSE]))
-  )
-
-  if (!is.null(group)) {
-    df$group <- as.character(group[df$id])
-  }
-
-  p <- ggplot2::ggplot(df, ggplot2::aes(tau, rmst, group = id)) +
-    ggplot2::geom_line(alpha = alpha) +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(title = title, x = "Horizon tau", y = "RMST")
-
-  if (!is.null(group)) {
-    p <- p + ggplot2::facet_wrap(~group)
-  }
-
-  p
-}
-
-#' Plot group-level RMST summaries
+#' @param boot List returned by [bootstrap_curve()] or [boot_rmst_delta()].
+#' @param grid Optional x-axis grid. If omitted, uses `boot$time`.
+#' @param title Plot title.
+#' @param xlab X-axis label.
+#' @param ylab Y-axis label.
 #'
-#' @param RMST_mat Numeric matrix from `rmst_dynamic()` (n_units x n_time).
-#' @param group Group labels of length n_units.
-#' @param statistic `"mean"` or `"median"`.
-#' @param title Optional title.
-#' @return A ggplot object.
+#' @return A `ggplot` object.
 #' @export
-plot_rmst_mean <- function(RMST_mat, group,
-                           statistic = c("mean", "median"),
-                           title = NULL) {
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    .stop("ggplot2 is required for plotting.")
-  }
-  statistic <- match.arg(statistic)
-
-  if (!is.matrix(RMST_mat) || !is.numeric(RMST_mat)) {
-    .stop("`RMST_mat` must be a numeric matrix from rmst_dynamic().")
-  }
-  if (missing(group) || length(group) != nrow(RMST_mat)) {
-    .stop("`group` must have length nrow(RMST_mat).")
+plot_boot_curve <- function(boot, grid = NULL, title = "Bootstrap curve", xlab = "t", ylab = "estimate") {
+  .require_ggplot2()
+  if (is.null(grid)) {
+    if (!is.null(boot$time)) {
+      grid <- boot$time
+    } else {
+      stop("Provide `grid=` or ensure boot has $time.", call. = FALSE)
+    }
   }
 
-  tau <- suppressWarnings(as.numeric(colnames(RMST_mat)))
-  if (any(!is.finite(tau))) tau <- seq_len(ncol(RMST_mat))
-
-  g <- as.character(group)
-  groups <- unique(g)
-
-  df <- do.call(
-    rbind,
-    lapply(groups, function(gr) {
-      idx <- which(g == gr)
-      vals <- if (statistic == "mean") {
-        colMeans(RMST_mat[idx, , drop = FALSE], na.rm = TRUE)
-      } else {
-        apply(RMST_mat[idx, , drop = FALSE], 2, stats::median, na.rm = TRUE)
-      }
-      data.frame(group = gr, tau = tau, estimate = as.numeric(vals))
-    })
-  )
-
-  ggplot2::ggplot(df, ggplot2::aes(tau, estimate, color = group)) +
-    ggplot2::geom_line(linewidth = 1) +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(title = title, x = "Horizon tau", y = "RMST")
+  df <- data.frame(t = grid, estimate = boot$estimate, lo = boot$lo, hi = boot$hi)
+  ggplot2::ggplot(df, ggplot2::aes(x = t, y = estimate)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = lo, ymax = hi), alpha = 0.2) +
+    ggplot2::labs(title = title, x = xlab, y = ylab)
 }

@@ -2,13 +2,10 @@
 % Please edit documentation in R/tvrmst-package.R
 \docType{package}
 \name{tvrmst-package}
-\alias{tvrmst}
 \alias{tvrmst-package}
 \title{tvrmst: Time-Varying RMST from Survival Matrices}
 \description{
-Model-agnostic utilities for RMST and time-varying RMST quantities computed
-from survival curves provided on a time grid. Functions accept a time vector
-and survival matrices, returning RMST-based quantities and bootstrap summaries.
+Utilities for RMST and time-varying RMST quantities computed from survival curves provided on a time grid. Model-agnostic accepts only time vector and survival matrices, returning RMST-based quantities and bootstrap summaries.
 }
 \author{
 \strong{Maintainer}: Imad EL BADISY \email{elbadisyimad@gmail.com}
