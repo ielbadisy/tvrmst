@@ -20,3 +20,27 @@ test_that("plot helpers return ggplot objects", {
   expect_s3_class(p_del, "ggplot")
   expect_s3_class(p_boot, "ggplot")
 })
+
+test_that("plot_rmst_two_arms supports custom labels, colors, and optional title", {
+  skip_if_not_installed("ggplot2")
+
+  f <- make_final_scope_fixture()
+  custom_colors <- c("#004E89", "#E07A1F")
+
+  p_two <- plot_rmst_two_arms(
+    f$xA,
+    f$xB,
+    labels = c("Control", "Treatment"),
+    title = NULL,
+    xlab = "Follow-up time",
+    ylab = "Restricted mean survival time",
+    curve_colors = custom_colors
+  )
+
+  expect_null(p_two$labels$title)
+  expect_identical(p_two$labels$x, "Follow-up time")
+  expect_identical(p_two$labels$y, "Restricted mean survival time")
+
+  color_scale <- p_two$scales$get_scales("colour")
+  expect_equal(unname(color_scale$palette(2)), custom_colors)
+})
