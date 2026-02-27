@@ -1,189 +1,191 @@
 # tvrmst
 
-`tvrmst` computes RMST and time-varying RMST summaries from survival
-predictions on a common time grid.
+**Time-Varying Restricted Mean Survival Time from Survival Matrices**
 
-## Input contract
+`tvrmst` is a matrix-first framework for computing dynamic restricted mean survival time (RMST) curves, treatment contrasts, bootstrap confidence intervals, and publication-ready visualizations.
 
-All compute/bootstrap functions use:
+The package separates survival estimation from functional summarization and operates directly on subject-level survival probability matrices.
 
--   `time`: strictly increasing numeric vector, length `m >= 2`
--   `S`: numeric `matrix` or `data.frame`, shape `n_units x m` (rows =
-    units, cols = time)
+## Motivation
 
-No vector input, no auto-transpose.
+Restricted mean survival time (RMST) is defined as:
 
-## Minimal API
+\[
+\mathrm{RMST}(\tau) = \int_0^\tau S(u)\,du.
+\]
 
-<table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th>Task</th>
-<th>Function</th>
-<th>Output</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>RMST at fixed horizon</td>
-<td><code>rmst_tau()</code></td>
-<td>numeric vector</td>
-</tr>
-<tr class="even">
-<td>RMST curve</td>
-<td><code>rmst_curve()</code></td>
-<td>data.frame</td>
-</tr>
-<tr class="odd">
-<td>RMST delta curve</td>
-<td><code>rmst_delta_curve()</code></td>
-<td>data.frame</td>
-</tr>
-<tr class="even">
-<td>Window RMST contrast</td>
-<td><code>rmst_window()</code></td>
-<td>data.frame or matrix</td>
-</tr>
-<tr class="odd">
-<td>Conditional tvRMST</td>
-<td><code>tvrmst_cond()</code></td>
-<td>data.frame or matrix</td>
-</tr>
-<tr class="even">
-<td>Conditional difference</td>
-<td><code>tvrmst_diff()</code></td>
-<td>data.frame or matrix</td>
-</tr>
-<tr class="odd">
-<td>Bootstrap CI (replicates)</td>
-<td><code>bootstrap_tvrmst_diff_reps()</code></td>
-<td>data.frame</td>
-</tr>
-</tbody>
-</table>
+RMST is often more interpretable and robust than hazard ratios, especially under non-proportional hazards. Most implementations target a single horizon \(\tau\). `tvrmst` extends this to the full dynamic curve:
 
-Plot helpers:
+\[
+\tau \mapsto \mathrm{RMST}(\tau).
+\]
 
--   `plot_survival_curves()`
--   `plot_rmst_curve()`
--   `plot_rmst_delta()`
--   `plot_tvrmst()`
--   `plot_tvrmst_diff()`
--   `plot_rmst_individual()`
--   `plot_rmst_mean()`
+This enables:
 
-## Classical workflow (KM, simulated non-PH trial)
+- Continuous-time treatment contrasts
+- Time-dependent benefit visualization
+- Model-agnostic post-processing of survival predictions
+- Individual-level RMST trajectories
 
-    library(tvrmst)
-    library(survival)
-    set.seed(1)
+## Mathematical Framework
 
-    n <- 400
-    arm <- rbinom(n, 1, 0.5)
-    # non-PH style simulation: treatment better early, attenuates later
-    rate <- ifelse(arm == 1, 0.09 + 0.02 * runif(n), 0.12 + 0.01 * runif(n))
-    Tevent <- rexp(n, rate = rate)
-    C <- runif(n, 2, 12)
-    time_obs <- pmin(Tevent, C)
-    status <- as.integer(Tevent <= C)
+For subject \(i\), with predicted survival \(S_i(t)\):
 
-    dat <- data.frame(time = time_obs, status = status, arm = factor(arm, labels = c("Control", "Treatment")))
-    time_grid <- seq(0, 10, by = 0.25)
+\[
+\mathrm{RMST}_i(\tau) = \int_0^\tau S_i(u)\,du.
+\]
 
-    km_to_grid <- function(df_arm, grid) {
-      fit <- survfit(Surv(time, status) ~ 1, data = df_arm)
-      sf <- summary(fit, times = grid, extend = TRUE)
-      sf$surv
-    }
+Population mean dynamic RMST:
 
-    S0 <- km_to_grid(subset(dat, arm == "Control"), time_grid)
-    S1 <- km_to_grid(subset(dat, arm == "Treatment"), time_grid)
+\[
+\mathrm{RMST}(\tau) = \frac{1}{n}\sum_{i=1}^{n}\mathrm{RMST}_i(\tau).
+\]
 
-    S0_mat <- rbind(Control = S0)
-    S1_mat <- rbind(Treatment = S1)
-    S_both <- rbind(Control = S0, Treatment = S1)
+Two-arm contrast (A vs B):
 
-    rmst_tau(S_both, time_grid, tau = 6)
+\[
+\Delta(\tau) = \mathrm{RMST}_B(\tau) - \mathrm{RMST}_A(\tau).
+\]
 
-    rc0 <- rmst_curve(S0_mat, time_grid, statistic = "mean", probs = NULL)
-    rc1 <- rmst_curve(S1_mat, time_grid, statistic = "mean", probs = NULL)
-    rc_wide <- data.frame(tau = time_grid, Control = rc0$estimate, Treatment = rc1$estimate)
-    dr <- rmst_delta_curve(rc_wide, arm1 = "Treatment", arm0 = "Control")
+All integrals use deterministic trapezoidal integration on a common time grid.
 
-    s_grid <- seq(0, 7, by = 0.5)
-    tau_win <- 2
-    window_w <- rmst_window(S1_mat, S0_mat, time_grid, s_grid, tau = tau_win, statistic = "mean")
-    mu0 <- tvrmst_cond(S0_mat, time_grid, s_grid, tau = tau_win, statistic = "mean")
-    mu1 <- tvrmst_cond(S1_mat, time_grid, s_grid, tau = tau_win, statistic = "mean")
-    delta_c <- tvrmst_diff(S1_mat, S0_mat, time_grid, s_grid, tau = tau_win, statistic = "mean")
+## Design Principles
 
-    if (requireNamespace("ggplot2", quietly = TRUE)) {
-      plot_survival_curves(S0_mat, S1_mat, time_grid, labels = c("Control", "Treatment"), show = "mean")
-      plot_rmst_curve(rc0, title = "RMST curve (Control)")
-      plot_rmst_delta(dr, title = "Delta RMST")
-      plot_tvrmst(mu0, mu1, labels = c("Control", "Treatment"), title = "Conditional tvRMST")
-      plot_tvrmst_diff(delta_c, title = "Delta conditional tvRMST")
-    }
+1. **Matrix-first abstraction**: rows are subjects, columns are time points.
+2. **Model-agnostic workflow**: works with any upstream survival estimator.
+3. **Deterministic integration**: transparent and reproducible numerics.
+4. **Unbalanced-arm support**: group sizes can differ.
+5. **Minimal API**: focused on core estimands, inference, and plotting.
 
-## Bootstrap CI from KM replicates
+`tvrmst` does not fit survival models.
 
-    set.seed(2)
+## Installation
 
-    mk_rep <- function(df, grid) {
-      idx <- sample(seq_len(nrow(df)), size = nrow(df), replace = TRUE)
-      d <- df[idx, , drop = FALSE]
-      S0_r <- km_to_grid(subset(d, arm == "Control"), grid)
-      S1_r <- km_to_grid(subset(d, arm == "Treatment"), grid)
-      list(S1 = rbind(Treatment = S1_r), S0 = rbind(Control = S0_r))
-    }
+```r
+# install.packages("remotes")
+remotes::install_github("your-username/tvrmst")
+```
 
-    reps <- replicate(200, mk_rep(dat, time_grid), simplify = FALSE)
+## Core API
 
-    boot_df <- bootstrap_tvrmst_diff_reps(
-      reps = reps,
-      time = time_grid,
-      s_grid = s_grid,
-      tau = tau_win,
-      conf = 0.95,
-      statistic = "mean"
-    )
+### Data structure
 
-    if (requireNamespace("ggplot2", quietly = TRUE)) {
-      plot_tvrmst_diff(boot_df, title = "Bootstrap CI for Delta conditional tvRMST")
-    }
+- `as_survmat()`
+- `nobs_survmat()`
+- `bind_survmat()`
 
-## Short survdnn demo (individualized RMST curves)
+### Estimands
 
-    if (requireNamespace("survdnn", quietly = TRUE)) {
-      # Example sketch; adapt formula/data to your survdnn setup
-      set.seed(3)
-      id_train <- sample(seq_len(nrow(dat)), floor(0.7 * nrow(dat)))
-      train_data <- dat[id_train, ]
-      test_data <- dat[-id_train, ]
+- `rmst_dynamic()`
+- `rmst_delta()`
 
-      fit <- survdnn::survdnn(
-        formula = Surv(time, status) ~ arm,
-        data = train_data
-      )
+### Bootstrap
 
-      pred_df <- predict(fit, newdata = test_data, type = "survival", times = time_grid)
-      RMST_dyn <- rmst_dynamic(pred_df, time_grid)
+- `bootstrap_curve()`
+- `boot_rmst_delta()`
 
-      if (requireNamespace("ggplot2", quietly = TRUE)) {
-        plot_rmst_individual(RMST_dyn, group = test_data$arm)
-      }
-    }
+### Visualization
 
-## References
+- `plot_rmst_individual_by_group()`
+- `plot_rmst_two_arms()`
+- `plot_delta_curve()`
+- `plot_boot_curve()`
 
--   Uno H, Claggett B, Tian L, et al. Moving beyond the hazard ratio in
-    quantifying the between-group difference in survival analysis. *J
-    Clin Oncol.* 2014.
--   Royston P, Parmar MKB. Restricted mean survival time: an alternative
-    to the hazard ratio for the design and analysis of randomized trials
-    with a time-to-event outcome. *BMC Med Res Methodol.* 2013.
+### Coercion helper
+
+- `as_survprob_matrix()`
+
+## Basic Workflow
+
+### 1) Prepare two-arm survival matrices
+
+```r
+set.seed(1)
+
+time <- seq(0, 5, by = 0.05)
+nA <- 100
+nB <- 80
+
+lambdaA <- rexp(nA, rate = 0.2)
+lambdaB <- rexp(nB, rate = 0.15)
+
+S_A <- outer(lambdaA, time, function(l, t) exp(-l * t))
+S_B <- outer(lambdaB, time, function(l, t) exp(-l * t))
+
+xA <- as_survmat(S_A, time, group = rep("A", nA))
+xB <- as_survmat(S_B, time, group = rep("B", nB))
+x_all <- bind_survmat(xA, xB)
+```
+
+### 2) Dynamic RMST
+
+```r
+res_all <- rmst_dynamic(x_all)
+```
+
+Key outputs:
+
+- `res_all$individual`: subject-level dynamic RMST curves
+- `res_all$mean`: population mean dynamic RMST curve
+
+### 3) Two-arm contrast
+
+```r
+d <- rmst_delta(xA, xB)
+```
+
+Returns full \(\Delta(\tau)\) over the grid.
+
+### 4) Bootstrap confidence intervals
+
+```r
+boot <- boot_rmst_delta(xA, xB, R = 300, seed = 1)
+```
+
+Computes percentile confidence bands pointwise along the delta curve.
+
+## Visualization
+
+```r
+plot_rmst_individual_by_group(res_all, group = x_all$group)
+plot_rmst_two_arms(xA, xB)
+plot_delta_curve(d$time, d$delta)
+plot_boot_curve(boot)
+```
+
+## End-to-End Example
+
+```r
+d <- rmst_delta(xA, xB)
+boot <- boot_rmst_delta(xA, xB, R = 200, seed = 1)
+
+plot_rmst_two_arms(xA, xB)
+plot_delta_curve(d$time, d$delta)
+plot_boot_curve(boot)
+```
+
+## Relation to Existing RMST Workflows
+
+Compared with fixed-horizon RMST tools, `tvrmst` provides:
+
+- Continuous dynamic RMST curves
+- Individual RMST trajectories
+- Direct compatibility with ML survival predictions
+- A clean separation between model fitting and functional summarization
+
+This supports modern benchmarking and production survival pipelines.
+
+## Citation
+
+```r
+# Installed package:
+citation("tvrmst")
+
+# Local development checkout (not installed):
+devtools::load_all(".")
+citation("tvrmst")
+```
+
+## License
+
+MIT
