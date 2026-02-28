@@ -174,7 +174,7 @@ This supports modern benchmarking and production survival pipelines.
 
 ## Citation
 
-```{r, eval = FALSE}
+```{r}
 citation("tvrmst")
 ```
 
