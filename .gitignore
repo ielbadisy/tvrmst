@@ -4,7 +4,10 @@
 .Ruserdata
 ..Rcheck
 README.html
+# Keep rendered README assets tracked so GitHub can display embedded plots.
 README_files/
+!README_files/
+!README_files/**
 
 /.quarto/
 **/*.quarto_ipynb
