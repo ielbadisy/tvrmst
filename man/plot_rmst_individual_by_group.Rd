@@ -8,7 +8,11 @@ plot_rmst_individual_by_group(
   res,
   group,
   n_show_per_group = 30,
-  title = "Individual dynamic RMST by group"
+  title = "Individual dynamic RMST by group",
+  x_scale = 1,
+  y_scale = 1,
+  x_unit = NULL,
+  y_unit = NULL
 )
 }
 \arguments{
@@ -19,6 +23,14 @@ plot_rmst_individual_by_group(
 \item{n_show_per_group}{Maximum number of individual curves shown per group.}
 
 \item{title}{Plot title.}
+
+\item{x_scale}{Positive divisor applied to the x-axis values before plotting.}
+
+\item{y_scale}{Positive divisor applied to the y-axis values before plotting.}
+
+\item{x_unit}{Optional unit label appended to the x-axis title.}
+
+\item{y_unit}{Optional unit label appended to the y-axis title.}
 }
 \value{
 A \code{ggplot} object.

@@ -11,7 +11,11 @@ plot_rmst_two_arms(
   title = NULL,
   xlab = "Time (tau)",
   ylab = "RMST(tau)",
-  curve_colors = c("#1B6CA8", "#D95F02")
+  curve_colors = c("#1B6CA8", "#D95F02"),
+  x_scale = 1,
+  y_scale = 1,
+  x_unit = NULL,
+  y_unit = NULL
 )
 }
 \arguments{
@@ -28,6 +32,14 @@ plot_rmst_two_arms(
 \item{ylab}{Y-axis label.}
 
 \item{curve_colors}{Colors for the two curves.}
+
+\item{x_scale}{Positive divisor applied to the x-axis values before plotting.}
+
+\item{y_scale}{Positive divisor applied to the y-axis values before plotting.}
+
+\item{x_unit}{Optional unit label appended to the x-axis title.}
+
+\item{y_unit}{Optional unit label appended to the y-axis title.}
 }
 \value{
 A \code{ggplot} object.

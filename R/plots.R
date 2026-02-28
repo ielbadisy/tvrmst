@@ -13,17 +13,44 @@
     )
 }
 
+.validate_axis_scale <- function(scale, arg) {
+  if (!is.numeric(scale) || length(scale) != 1L || !is.finite(scale) || scale <= 0) {
+    stop(sprintf("`%s` must be a single positive finite number.", arg), call. = FALSE)
+  }
+  invisible(scale)
+}
+
+.scale_axis_values <- function(x, scale, arg) {
+  .validate_axis_scale(scale, arg)
+  x / scale
+}
+
+.axis_label_with_unit <- function(label, unit) {
+  if (is.null(unit) || !nzchar(unit)) {
+    return(label)
+  }
+  paste0(label, " (", unit, ")")
+}
+
 #' Plot individual dynamic RMST curves by group
 #'
 #' @param res Result from [rmst_dynamic()] containing `individual` and `time`.
 #' @param group Group vector aligned with rows of `res$individual`.
 #' @param n_show_per_group Maximum number of individual curves shown per group.
 #' @param title Plot title.
+#' @param x_scale Positive divisor applied to the x-axis values before plotting.
+#' @param y_scale Positive divisor applied to the y-axis values before plotting.
+#' @param x_unit Optional unit label appended to the x-axis title.
+#' @param y_unit Optional unit label appended to the y-axis title.
 #'
 #' @return A `ggplot` object.
 #' @export
 plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
-                                          title = "Individual dynamic RMST by group") {
+                                          title = "Individual dynamic RMST by group",
+                                          x_scale = 1,
+                                          y_scale = 1,
+                                          x_unit = NULL,
+                                          y_unit = NULL) {
   .require_ggplot2()
   stopifnot(!is.null(res$individual))
 
@@ -44,13 +71,17 @@ plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
   df <- data.frame(
     id = rep(seq_len(k), each = m),
     group = rep(g_sub, each = m),
-    tau = rep(res$time, times = k),
-    estimate = as.vector(t(ind_sub))
+    tau = rep(.scale_axis_values(res$time, x_scale, "x_scale"), times = k),
+    estimate = .scale_axis_values(as.vector(t(ind_sub)), y_scale, "y_scale")
   )
 
   df_mean <- do.call(rbind, lapply(levels(group), function(g) {
     ids <- which(group == g)
-    data.frame(group = g, tau = res$time, mean = colMeans(ind[ids, , drop = FALSE]))
+    data.frame(
+      group = g,
+      tau = .scale_axis_values(res$time, x_scale, "x_scale"),
+      mean = .scale_axis_values(colMeans(ind[ids, , drop = FALSE]), y_scale, "y_scale")
+    )
   }))
 
   ggplot2::ggplot(df, ggplot2::aes(x = tau, y = estimate, group = id)) +
@@ -62,7 +93,11 @@ plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
       linewidth = 1
     ) +
     ggplot2::facet_wrap(~group) +
-    ggplot2::labs(title = title, x = "tau", y = "RMST_i(tau)") +
+    ggplot2::labs(
+      title = title,
+      x = .axis_label_with_unit("tau", x_unit),
+      y = .axis_label_with_unit("RMST_i(tau)", y_unit)
+    ) +
     .tvrmst_plot_theme()
 }
 
@@ -75,6 +110,10 @@ plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
 #' @param xlab X-axis label.
 #' @param ylab Y-axis label.
 #' @param curve_colors Colors for the two curves.
+#' @param x_scale Positive divisor applied to the x-axis values before plotting.
+#' @param y_scale Positive divisor applied to the y-axis values before plotting.
+#' @param x_unit Optional unit label appended to the x-axis title.
+#' @param y_unit Optional unit label appended to the y-axis title.
 #'
 #' @return A `ggplot` object.
 #' @export
@@ -83,7 +122,11 @@ plot_rmst_two_arms <- function(xA, xB,
                                title = NULL,
                                xlab = "Time (tau)",
                                ylab = "RMST(tau)",
-                               curve_colors = c("#1B6CA8", "#D95F02")) {
+                               curve_colors = c("#1B6CA8", "#D95F02"),
+                               x_scale = 1,
+                               y_scale = 1,
+                               x_unit = NULL,
+                               y_unit = NULL) {
   .require_ggplot2()
   stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
   stopifnot(length(xA$time) == length(xB$time), all(abs(xA$time - xB$time) < 1e-12))
@@ -93,8 +136,16 @@ plot_rmst_two_arms <- function(xA, xB,
   rB <- rmst_dynamic(xB, by = NULL)
 
   df <- rbind(
-    data.frame(group = labels[1], tau = rA$time, estimate = rA$mean),
-    data.frame(group = labels[2], tau = rB$time, estimate = rB$mean)
+    data.frame(
+      group = labels[1],
+      tau = .scale_axis_values(rA$time, x_scale, "x_scale"),
+      estimate = .scale_axis_values(rA$mean, y_scale, "y_scale")
+    ),
+    data.frame(
+      group = labels[2],
+      tau = .scale_axis_values(rB$time, x_scale, "x_scale"),
+      estimate = .scale_axis_values(rB$mean, y_scale, "y_scale")
+    )
   )
 
   names(curve_colors) <- labels
@@ -102,7 +153,11 @@ plot_rmst_two_arms <- function(xA, xB,
   ggplot2::ggplot(df, ggplot2::aes(x = tau, y = estimate, color = group)) +
     ggplot2::geom_line(linewidth = 1) +
     ggplot2::scale_color_manual(values = curve_colors) +
-    ggplot2::labs(title = title, x = xlab, y = ylab) +
+    ggplot2::labs(
+      title = title,
+      x = .axis_label_with_unit(xlab, x_unit),
+      y = .axis_label_with_unit(ylab, y_unit)
+    ) +
     .tvrmst_plot_theme()
 }
 
@@ -113,15 +168,27 @@ plot_rmst_two_arms <- function(xA, xB,
 #' @param title Plot title.
 #' @param xlab X-axis label.
 #' @param ylab Y-axis label.
+#' @param x_scale Positive divisor applied to the x-axis values before plotting.
+#' @param y_scale Positive divisor applied to the y-axis values before plotting.
+#' @param x_unit Optional unit label appended to the x-axis title.
+#' @param y_unit Optional unit label appended to the y-axis title.
 #'
 #' @return A `ggplot` object.
 #' @export
-plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", ylab = "Delta") {
+plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", ylab = "Delta",
+                             x_scale = 1, y_scale = 1, x_unit = NULL, y_unit = NULL) {
   .require_ggplot2()
-  df <- data.frame(t = grid, delta = delta)
+  df <- data.frame(
+    t = .scale_axis_values(grid, x_scale, "x_scale"),
+    delta = .scale_axis_values(delta, y_scale, "y_scale")
+  )
   ggplot2::ggplot(df, ggplot2::aes(x = t, y = delta)) +
     ggplot2::geom_line() +
-    ggplot2::labs(title = title, x = xlab, y = ylab) +
+    ggplot2::labs(
+      title = title,
+      x = .axis_label_with_unit(xlab, x_unit),
+      y = .axis_label_with_unit(ylab, y_unit)
+    ) +
     .tvrmst_plot_theme()
 }
 
@@ -132,10 +199,15 @@ plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", yla
 #' @param title Plot title.
 #' @param xlab X-axis label.
 #' @param ylab Y-axis label.
+#' @param x_scale Positive divisor applied to the x-axis values before plotting.
+#' @param y_scale Positive divisor applied to the y-axis values before plotting.
+#' @param x_unit Optional unit label appended to the x-axis title.
+#' @param y_unit Optional unit label appended to the y-axis title.
 #'
 #' @return A `ggplot` object.
 #' @export
-plot_boot_curve <- function(boot, grid = NULL, title = "Bootstrap curve", xlab = "t", ylab = "estimate") {
+plot_boot_curve <- function(boot, grid = NULL, title = "Bootstrap curve", xlab = "t", ylab = "estimate",
+                            x_scale = 1, y_scale = 1, x_unit = NULL, y_unit = NULL) {
   .require_ggplot2()
   if (is.null(grid)) {
     if (!is.null(boot$time)) {
@@ -145,10 +217,19 @@ plot_boot_curve <- function(boot, grid = NULL, title = "Bootstrap curve", xlab =
     }
   }
 
-  df <- data.frame(t = grid, estimate = boot$estimate, lo = boot$lo, hi = boot$hi)
+  df <- data.frame(
+    t = .scale_axis_values(grid, x_scale, "x_scale"),
+    estimate = .scale_axis_values(boot$estimate, y_scale, "y_scale"),
+    lo = .scale_axis_values(boot$lo, y_scale, "y_scale"),
+    hi = .scale_axis_values(boot$hi, y_scale, "y_scale")
+  )
   ggplot2::ggplot(df, ggplot2::aes(x = t, y = estimate)) +
     ggplot2::geom_line() +
     ggplot2::geom_ribbon(ggplot2::aes(ymin = lo, ymax = hi), alpha = 0.2) +
-    ggplot2::labs(title = title, x = xlab, y = ylab) +
+    ggplot2::labs(
+      title = title,
+      x = .axis_label_with_unit(xlab, x_unit),
+      y = .axis_label_with_unit(ylab, y_unit)
+    ) +
     .tvrmst_plot_theme()
 }

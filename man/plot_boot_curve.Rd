@@ -9,7 +9,11 @@ plot_boot_curve(
   grid = NULL,
   title = "Bootstrap curve",
   xlab = "t",
-  ylab = "estimate"
+  ylab = "estimate",
+  x_scale = 1,
+  y_scale = 1,
+  x_unit = NULL,
+  y_unit = NULL
 )
 }
 \arguments{
@@ -22,6 +26,14 @@ plot_boot_curve(
 \item{xlab}{X-axis label.}
 
 \item{ylab}{Y-axis label.}
+
+\item{x_scale}{Positive divisor applied to the x-axis values before plotting.}
+
+\item{y_scale}{Positive divisor applied to the y-axis values before plotting.}
+
+\item{x_unit}{Optional unit label appended to the x-axis title.}
+
+\item{y_unit}{Optional unit label appended to the y-axis title.}
 }
 \value{
 A \code{ggplot} object.
