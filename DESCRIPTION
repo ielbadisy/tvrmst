@@ -2,8 +2,8 @@ Package: tvrmst
 Type: Package
 Title: Time-Varying RMST from Survival Matrices
 Version: 0.0.6
-Authors@R: person(given = c("Imad", "EL"),
-  family = "BADISY",
+Authors@R: person(given = c("Imad"),
+  family = "EL BADISY",
   role = c("aut", "cre"),
   email = "elbadisyimad@gmail.com")
 Author: Imad EL BADISY [aut, cre]
