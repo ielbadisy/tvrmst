@@ -3,6 +3,8 @@
 .RData
 .Ruserdata
 ..Rcheck
+*.Rcheck/
+*.tar.gz
 README.html
 # Keep rendered README assets tracked so GitHub can display embedded plots.
 README_files/
