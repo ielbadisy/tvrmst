@@ -196,11 +196,6 @@ This supports modern benchmarking and production survival pipelines.
 ## Citation
 
 ``` r
-# Installed package:
-citation("tvrmst")
-
-# Local development checkout (not installed):
-devtools::load_all(".")
 citation("tvrmst")
 ```
 
