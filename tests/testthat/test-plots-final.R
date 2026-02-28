@@ -44,3 +44,66 @@ test_that("plot_rmst_two_arms supports custom labels, colors, and optional title
   color_scale <- p_two$scales$get_scales("colour")
   expect_equal(unname(color_scale$palette(2)), custom_colors)
 })
+
+test_that("plot helpers support axis rescaling and unit labels", {
+  skip_if_not_installed("ggplot2")
+
+  f <- make_final_scope_fixture()
+  d <- rmst_delta(f$xA, f$xB)
+  boot_d <- boot_rmst_delta(f$xA, f$xB, R = 30, seed = 1)
+
+  p_two <- plot_rmst_two_arms(
+    f$xA,
+    f$xB,
+    x_scale = 2,
+    y_scale = 0.5,
+    x_unit = "months",
+    y_unit = "months"
+  )
+  expect_equal(p_two$data$tau[1], f$xA$time[1] / 2)
+  expect_equal(p_two$data$estimate[1], rmst_dynamic(f$xA, by = NULL)$mean[1] / 0.5)
+  expect_identical(p_two$labels$x, "Time (tau), months")
+  expect_identical(p_two$labels$y, "RMST(tau), months")
+
+  p_delta <- plot_delta_curve(
+    d$time,
+    d$delta,
+    x_scale = 10,
+    y_scale = 2,
+    x_unit = "years",
+    y_unit = "years"
+  )
+  expect_equal(p_delta$data$t[2], d$time[2] / 10)
+  expect_equal(p_delta$data$delta[2], d$delta[2] / 2)
+  expect_identical(p_delta$labels$x, "t (years)")
+  expect_identical(p_delta$labels$y, "Delta (years)")
+
+  p_boot <- plot_boot_curve(
+    boot_d,
+    x_scale = 4,
+    y_scale = 2,
+    x_unit = "quarters",
+    y_unit = "months"
+  )
+  expect_equal(p_boot$data$t[3], boot_d$time[3] / 4)
+  expect_equal(p_boot$data$estimate[3], boot_d$estimate[3] / 2)
+  expect_equal(p_boot$data$lo[3], boot_d$lo[3] / 2)
+  expect_equal(p_boot$data$hi[3], boot_d$hi[3] / 2)
+  expect_identical(p_boot$labels$x, "t (quarters)")
+  expect_identical(p_boot$labels$y, "estimate (months)")
+})
+
+test_that("plot helpers reject invalid axis scales", {
+  skip_if_not_installed("ggplot2")
+
+  f <- make_final_scope_fixture()
+
+  expect_error(
+    plot_rmst_two_arms(f$xA, f$xB, x_scale = 0),
+    "`x_scale` must be a single positive finite number."
+  )
+  expect_error(
+    plot_delta_curve(1:3, c(0.1, 0.2, 0.3), y_scale = -1),
+    "`y_scale` must be a single positive finite number."
+  )
+})
