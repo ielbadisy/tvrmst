@@ -62,8 +62,8 @@ test_that("plot helpers support axis rescaling and unit labels", {
   )
   expect_equal(p_two$data$tau[1], f$xA$time[1] / 2)
   expect_equal(p_two$data$estimate[1], rmst_dynamic(f$xA, by = NULL)$mean[1] / 0.5)
-  expect_identical(p_two$labels$x, "Time (tau) (months)")
-  expect_identical(p_two$labels$y, "RMST(tau) (months)")
+  expect_identical(p_two$labels$x, "Time (tau), months")
+  expect_identical(p_two$labels$y, "RMST(tau), months")
 
   p_delta <- plot_delta_curve(
     d$time,

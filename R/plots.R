@@ -29,6 +29,9 @@
   if (is.null(unit) || !nzchar(unit)) {
     return(label)
   }
+  if (grepl("\\)$", label)) {
+    return(paste0(label, ", ", unit))
+  }
   paste0(label, " (", unit, ")")
 }
 
