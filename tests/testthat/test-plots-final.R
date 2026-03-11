@@ -21,6 +21,27 @@ test_that("plot helpers return ggplot objects", {
   expect_s3_class(p_boot, "ggplot")
 })
 
+test_that("plot helpers use theme_bw as the base theme", {
+  skip_if_not_installed("ggplot2")
+
+  f <- make_final_scope_fixture()
+  p_two <- plot_rmst_two_arms(f$xA, f$xB)
+  expected <- ggplot2::theme_bw(base_size = 12)
+
+  expect_equal(
+    ggplot2::calc_element("panel.background", p_two$theme),
+    ggplot2::calc_element("panel.background", expected)
+  )
+  expect_equal(
+    ggplot2::calc_element("panel.border", p_two$theme),
+    ggplot2::calc_element("panel.border", expected)
+  )
+  expect_equal(
+    ggplot2::calc_element("axis.line", p_two$theme),
+    ggplot2::calc_element("axis.line", expected)
+  )
+})
+
 test_that("plot_rmst_two_arms supports custom labels, colors, and optional title", {
   skip_if_not_installed("ggplot2")
 

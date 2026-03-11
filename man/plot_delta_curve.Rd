@@ -41,3 +41,12 @@ A \code{ggplot} object.
 \description{
 Plot a delta curve
 }
+\examples{
+\dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+time <- c(0, 1, 2)
+xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+d <- rmst_delta(xA, xB)
+plot_delta_curve(d$time, d$delta)
+\dontshow{\}) # examplesIf}
+}

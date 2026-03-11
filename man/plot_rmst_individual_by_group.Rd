@@ -38,3 +38,18 @@ A \code{ggplot} object.
 \description{
 Plot individual dynamic RMST curves by group
 }
+\examples{
+\dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+time <- c(0, 1, 2)
+S <- rbind(
+  c(1.0, 0.9, 0.7),
+  c(1.0, 0.8, 0.6),
+  c(1.0, 0.95, 0.8),
+  c(1.0, 0.85, 0.7)
+)
+grp <- c("A", "A", "B", "B")
+x <- as_survmat(S, time, group = grp)
+res <- rmst_dynamic(x)
+plot_rmst_individual_by_group(res, grp, n_show_per_group = 2)
+\dontshow{\}) # examplesIf}
+}

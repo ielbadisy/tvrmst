@@ -1,6 +1,6 @@
 # Internal plot theme shared by package plotting helpers.
 .tvrmst_plot_theme <- function() {
-  ggplot2::theme_minimal(base_size = 12) +
+  ggplot2::theme_bw(base_size = 12) +
     ggplot2::theme(
       panel.grid.minor = ggplot2::element_blank(),
       panel.grid.major.x = ggplot2::element_blank(),
@@ -47,6 +47,18 @@
 #' @param y_unit Optional unit label appended to the y-axis title.
 #'
 #' @return A `ggplot` object.
+#' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
+#' time <- c(0, 1, 2)
+#' S <- rbind(
+#'   c(1.0, 0.9, 0.7),
+#'   c(1.0, 0.8, 0.6),
+#'   c(1.0, 0.95, 0.8),
+#'   c(1.0, 0.85, 0.7)
+#' )
+#' grp <- c("A", "A", "B", "B")
+#' x <- as_survmat(S, time, group = grp)
+#' res <- rmst_dynamic(x)
+#' plot_rmst_individual_by_group(res, grp, n_show_per_group = 2)
 #' @export
 plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
                                           title = "Individual dynamic RMST by group",
@@ -119,6 +131,11 @@ plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
 #' @param y_unit Optional unit label appended to the y-axis title.
 #'
 #' @return A `ggplot` object.
+#' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
+#' time <- c(0, 1, 2)
+#' xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+#' xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+#' plot_rmst_two_arms(xA, xB, labels = c("Control", "Treatment"))
 #' @export
 plot_rmst_two_arms <- function(xA, xB,
                                labels = c("Arm A", "Arm B"),
@@ -177,6 +194,12 @@ plot_rmst_two_arms <- function(xA, xB,
 #' @param y_unit Optional unit label appended to the y-axis title.
 #'
 #' @return A `ggplot` object.
+#' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
+#' time <- c(0, 1, 2)
+#' xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+#' xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+#' d <- rmst_delta(xA, xB)
+#' plot_delta_curve(d$time, d$delta)
 #' @export
 plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", ylab = "Delta",
                              x_scale = 1, y_scale = 1, x_unit = NULL, y_unit = NULL) {
@@ -208,6 +231,12 @@ plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", yla
 #' @param y_unit Optional unit label appended to the y-axis title.
 #'
 #' @return A `ggplot` object.
+#' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
+#' time <- c(0, 1, 2)
+#' xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+#' xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+#' boot <- boot_rmst_delta(xA, xB, R = 10, seed = 1)
+#' plot_boot_curve(boot)
 #' @export
 plot_boot_curve <- function(boot, grid = NULL, title = "Bootstrap curve", xlab = "t", ylab = "estimate",
                             x_scale = 1, y_scale = 1, x_unit = NULL, y_unit = NULL) {
