@@ -69,7 +69,7 @@ All integrals use deterministic trapezoidal integration on a common time grid.
 
 ```{r, eval=FALSE}
 # install.packages("remotes")
-remotes::install_github("your-username/tvrmst")
+remotes::install_github("ielbadisy/tvrmst")
 ```
 
 ## Core API

@@ -2,8 +2,9 @@
 % Please edit documentation in R/tvrmst-package.R
 \name{tvrmst}
 \alias{tvrmst}
-\title{tvrmst: Matrix-first dynamic RMST utilities}
+\title{tvrmst: Matrix-first dynamic restricted mean survival time utilities}
 \description{
-Tools for dynamic RMST estimation, RMST deltas, bootstrap uncertainty,
-and plotting from survival probability matrices evaluated on a common time grid.
+Tools for dynamic restricted mean survival time estimation, restricted mean
+survival time contrasts, bootstrap uncertainty, and plotting from survival
+probability matrices evaluated on a common time grid.
 }
