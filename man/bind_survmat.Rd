@@ -15,3 +15,10 @@ A combined \code{survmat}.
 \description{
 Row-bind survmat objects on a common time grid
 }
+\examples{
+time <- c(0, 1, 2)
+xA <- as_survmat(matrix(c(1.0, 0.9, 0.7), nrow = 1), time, group = "A")
+xB <- as_survmat(matrix(c(1.0, 0.8, 0.6), nrow = 1), time, group = "B")
+x <- bind_survmat(xA, xB)
+nobs_survmat(x)
+}

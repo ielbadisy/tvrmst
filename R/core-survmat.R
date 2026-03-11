@@ -6,6 +6,14 @@
 #' @param group Optional group labels with length `nrow(S)`.
 #'
 #' @return An object of class `"survmat"`.
+#' @examples
+#' time <- c(0, 1, 2)
+#' S <- rbind(
+#'   c(1.0, 0.8, 0.6),
+#'   c(1.0, 0.7, 0.5)
+#' )
+#' x <- as_survmat(S, time, group = c("A", "B"))
+#' x
 #' @export
 as_survmat <- function(S, time, id = NULL, group = NULL) {
   stopifnot(is.matrix(S))
@@ -35,6 +43,14 @@ as_survmat <- function(S, time, id = NULL, group = NULL) {
 #' @param x A `survmat` object.
 #'
 #' @return Number of subjects.
+#' @examples
+#' time <- c(0, 1, 2)
+#' S <- rbind(
+#'   c(1.0, 0.8, 0.6),
+#'   c(1.0, 0.7, 0.5)
+#' )
+#' x <- as_survmat(S, time)
+#' nobs_survmat(x)
 #' @export
 nobs_survmat <- function(x) {
   stopifnot(inherits(x, "survmat"))
@@ -46,6 +62,12 @@ nobs_survmat <- function(x) {
 #' @param ... One or more `survmat` objects.
 #'
 #' @return A combined `survmat`.
+#' @examples
+#' time <- c(0, 1, 2)
+#' xA <- as_survmat(matrix(c(1.0, 0.9, 0.7), nrow = 1), time, group = "A")
+#' xB <- as_survmat(matrix(c(1.0, 0.8, 0.6), nrow = 1), time, group = "B")
+#' x <- bind_survmat(xA, xB)
+#' nobs_survmat(x)
 #' @export
 bind_survmat <- function(...) {
   xs <- list(...)

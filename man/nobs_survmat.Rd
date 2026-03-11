@@ -15,3 +15,12 @@ Number of subjects.
 \description{
 Number of rows in a survmat
 }
+\examples{
+time <- c(0, 1, 2)
+S <- rbind(
+  c(1.0, 0.8, 0.6),
+  c(1.0, 0.7, 0.5)
+)
+x <- as_survmat(S, time)
+nobs_survmat(x)
+}

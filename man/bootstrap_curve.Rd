@@ -24,3 +24,18 @@ A list with \code{estimate}, \code{lo}, \code{hi}, and \code{conf}.
 \description{
 Generic bootstrap for curve-valued estimators
 }
+\examples{
+vals <- c(1, 2, 4, 8)
+boot <- bootstrap_curve(
+  function(r) {
+    if (is.null(r)) {
+      mean(vals)
+    } else {
+      mean(sample(vals, replace = TRUE))
+    }
+  },
+  R = 20,
+  seed = 1
+)
+boot$estimate
+}

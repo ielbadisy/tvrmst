@@ -19,3 +19,14 @@ A list with individual and mean RMST curves.
 \description{
 Computes \verb{RMST_i(tau) = integral_0^tau S_i(u) du} over the provided grid.
 }
+\examples{
+time <- c(0, 1, 2)
+S <- rbind(
+  c(1.0, 0.8, 0.6),
+  c(1.0, 0.7, 0.5)
+)
+x <- as_survmat(S, time, group = c("A", "A"))
+res <- rmst_dynamic(x, tau = c(0.5, 1.5))
+res$mean
+res$at_tau
+}

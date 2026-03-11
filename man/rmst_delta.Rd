@@ -19,3 +19,9 @@ A list with RMST curves for both arms and the delta curve.
 \description{
 Computes \code{Delta(tau) = RMST_B(tau) - RMST_A(tau)}.
 }
+\examples{
+time <- c(0, 1, 2)
+xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+rmst_delta(xA, xB, tau = 1.5)$at_tau
+}

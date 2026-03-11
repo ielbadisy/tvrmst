@@ -21,3 +21,12 @@ An object of class \code{"survmat"}.
 \description{
 Construct a survival matrix object
 }
+\examples{
+time <- c(0, 1, 2)
+S <- rbind(
+  c(1.0, 0.8, 0.6),
+  c(1.0, 0.7, 0.5)
+)
+x <- as_survmat(S, time, group = c("A", "B"))
+x
+}

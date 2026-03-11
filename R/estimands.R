@@ -7,6 +7,16 @@
 #' @param by Optional grouping variable. Defaults to `x$group`.
 #'
 #' @return A list with individual and mean RMST curves.
+#' @examples
+#' time <- c(0, 1, 2)
+#' S <- rbind(
+#'   c(1.0, 0.8, 0.6),
+#'   c(1.0, 0.7, 0.5)
+#' )
+#' x <- as_survmat(S, time, group = c("A", "A"))
+#' res <- rmst_dynamic(x, tau = c(0.5, 1.5))
+#' res$mean
+#' res$at_tau
 #' @export
 rmst_dynamic <- function(x, tau = NULL, by = x$group) {
   stopifnot(inherits(x, "survmat"))
@@ -54,6 +64,11 @@ rmst_dynamic <- function(x, tau = NULL, by = x$group) {
 #' @param tau Optional numeric horizons for interpolation.
 #'
 #' @return A list with RMST curves for both arms and the delta curve.
+#' @examples
+#' time <- c(0, 1, 2)
+#' xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+#' xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+#' rmst_delta(xA, xB, tau = 1.5)$at_tau
 #' @export
 rmst_delta <- function(xA, xB, tau = NULL) {
   stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
