@@ -15,7 +15,7 @@ Description: Utilities for restricted mean survival time (RMST) and
   bootstrap summaries. For restricted mean survival time methodology, see Royston 
   and Parmar (2013) <doi:10.1186/1471-2288-13-152>.
 License: MIT + file LICENSE
-URL: https://github.com/ielbadisy/tvrmst, https://CRAN.R-project.org/package=tvrmst
+URL: https://CRAN.R-project.org/package=tvrmst
 BugReports: https://github.com/ielbadisy/tvrmst/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
