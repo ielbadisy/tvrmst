@@ -3,11 +3,11 @@ Type: Package
 Title: Time-Varying Restricted Mean Survival Time from Survival Matrices
 Version: 0.0.6
 Authors@R: person(given = c("Imad"),
-  family = "EL BADISY",
+  family = "El Badisy",
   role = c("aut", "cre"),
   email = "elbadisyimad@gmail.com")
-Author: Imad EL BADISY [aut, cre]
-Maintainer: Imad EL BADISY <elbadisyimad@gmail.com>
+Author: Imad El Badisy [aut, cre]
+Maintainer: Imad El Badisy <elbadisyimad@gmail.com>
 Description: Utilities for restricted mean survival time (RMST) and
   time-varying restricted mean survival time quantities computed from survival
   curves provided on a time grid. The package is model-agnostic and accepts
