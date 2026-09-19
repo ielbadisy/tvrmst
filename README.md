@@ -1,6 +1,8 @@
 
 # tvrmst
 
+[![CRAN status](https://www.r-pkg.org/badges/version/tvrmst)](https://CRAN.R-project.org/package=tvrmst)
+
 **Time-Varying Restricted Mean Survival Time from Survival Matrices**
 
 `tvrmst` is a matrix-first framework for computing dynamic restricted
