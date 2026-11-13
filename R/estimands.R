@@ -13,19 +13,19 @@
 #'   c(1.0, 0.8, 0.6),
 #'   c(1.0, 0.7, 0.5)
 #' )
-#' x <- as_survmat(S, time, group = c("A", "A"))
-#' res <- rmst_dynamic(x, tau = c(0.5, 1.5))
+#' x <- assurvmat(S, time, group = c("A", "A"))
+#' res <- rmstdynamic(x, tau = c(0.5, 1.5))
 #' res$mean
 #' res$at_tau
 #' @export
-rmst_dynamic <- function(x, tau = NULL, by = x$group) {
+rmstdynamic <- function(x, tau = NULL, by = x$group) {
   stopifnot(inherits(x, "survmat"))
   time <- x$time
   ind <- trapz_cum(time, x$S)
   mean_curve <- colMeans(ind)
 
   out <- list(
-    estimand = "rmst_dynamic",
+    estimand = "rmstdynamic",
     time = time,
     individual = ind,
     mean = mean_curve
@@ -60,7 +60,7 @@ rmst_dynamic <- function(x, tau = NULL, by = x$group) {
 #' Computes `Delta(tau) = RMST_B(tau) - RMST_A(tau)`. The sign is B minus A:
 #' a positive value means arm B has the longer restricted mean survival time.
 #' Both arms must share the same time grid, which starts at 0 with `S = 1`
-#' (enforced by [as_survmat()]).
+#' (enforced by [assurvmat()]).
 #'
 #' @param xA A `survmat` object for arm A.
 #' @param xB A `survmat` object for arm B.
@@ -69,19 +69,19 @@ rmst_dynamic <- function(x, tau = NULL, by = x$group) {
 #' @return A list with RMST curves for both arms and the delta curve.
 #' @examples
 #' time <- c(0, 1, 2)
-#' xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
-#' xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
-#' rmst_delta(xA, xB, tau = 1.5)$at_tau
+#' xA <- assurvmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+#' xB <- assurvmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+#' rmstdelta(xA, xB, tau = 1.5)$at_tau
 #' @export
-rmst_delta <- function(xA, xB, tau = NULL) {
+rmstdelta <- function(xA, xB, tau = NULL) {
   stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
   stopifnot(length(xA$time) == length(xB$time), all(abs(xA$time - xB$time) < 1e-12))
 
-  rA <- rmst_dynamic(xA, by = NULL)
-  rB <- rmst_dynamic(xB, by = NULL)
+  rA <- rmstdynamic(xA, by = NULL)
+  rB <- rmstdynamic(xB, by = NULL)
 
   out <- list(
-    estimand = "rmst_delta",
+    estimand = "rmstdelta",
     time = rA$time,
     rmst_A = rA$mean,
     rmst_B = rB$mean,

@@ -1,12 +1,12 @@
 library(testthat)
 
-test_that("rmst_dynamic supports individual, grouped, and at_tau checks", {
+test_that("rmstdynamic supports individual, grouped, and at_tau checks", {
   f <- make_final_scope_fixture()
   tau_test <- c(1.2, 2.7, 4.6)
 
-  resA <- rmst_dynamic(f$xA, tau = tau_test)
-  resB <- rmst_dynamic(f$xB, tau = tau_test)
-  resAll <- rmst_dynamic(f$x_all)
+  resA <- rmstdynamic(f$xA, tau = tau_test)
+  resB <- rmstdynamic(f$xB, tau = tau_test)
+  resAll <- rmstdynamic(f$x_all)
 
   expect_false(is.null(resA$individual))
   expect_false(is.null(resB$individual))
@@ -30,11 +30,11 @@ test_that("rmst_dynamic supports individual, grouped, and at_tau checks", {
   expect_lt(max(abs(resA$at_tau$estimate - rmstA_true)), 0.02)
 })
 
-test_that("rmst_delta returns valid curve and tau summaries", {
+test_that("rmstdelta returns valid curve and tau summaries", {
   f <- make_final_scope_fixture()
   tau_test <- c(1.2, 2.7, 4.6)
 
-  d <- rmst_delta(f$xA, f$xB, tau = tau_test)
+  d <- rmstdelta(f$xA, f$xB, tau = tau_test)
 
   expect_equal(length(d$delta), length(f$time))
   expect_equal(nrow(d$at_tau), length(tau_test))

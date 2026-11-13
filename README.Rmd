@@ -78,30 +78,30 @@ remotes::install_github("ielbadisy/tvrmst")
 
 ### Data structure
 
-- `as_survmat()`
-- `nobs_survmat()`
-- `bind_survmat()`
+- `assurvmat()`
+- `nobssurvmat()`
+- `bindsurvmat()`
 
 ### Estimands
 
-- `rmst_dynamic()`
-- `rmst_delta()`
+- `rmstdynamic()`
+- `rmstdelta()`
 
 ### Bootstrap
 
-- `bootstrap_curve()`
-- `boot_rmst_delta()`
+- `bootstrapcurve()`
+- `bootrmstdelta()`
 
 ### Visualization
 
-- `plot_rmst_individual_by_group()`
-- `plot_rmst_two_arms()`
-- `plot_delta_curve()`
-- `plot_boot_curve()`
+- `plotrmstindividualbygroup()`
+- `plotrmsttwoarms()`
+- `plotdeltacurve()`
+- `plotbootcurve()`
 
 ### Coercion helper
 
-- `as_survprob_matrix()`
+- `assurvprobmatrix()`
 
 ## Basic Workflow
 
@@ -121,15 +121,15 @@ lambdaB <- rexp(nB, rate = 0.15)
 S_A <- outer(lambdaA, time, function(l, t) exp(-l * t))
 S_B <- outer(lambdaB, time, function(l, t) exp(-l * t))
 
-xA <- as_survmat(S_A, time, group = rep("A", nA))
-xB <- as_survmat(S_B, time, group = rep("B", nB))
-x_all <- bind_survmat(xA, xB)
+xA <- assurvmat(S_A, time, group = rep("A", nA))
+xB <- assurvmat(S_B, time, group = rep("B", nB))
+x_all <- bindsurvmat(xA, xB)
 ```
 
 ### 2) Dynamic RMST
 
 ```{r}
-res_all <- rmst_dynamic(x_all)
+res_all <- rmstdynamic(x_all)
 ```
 
 Key outputs:
@@ -141,7 +141,7 @@ Key outputs:
 ### 3) Two-arm contrast
 
 ```{r}
-d <- rmst_delta(xA, xB)
+d <- rmstdelta(xA, xB)
 ```
 
 Returns full $\Delta(\tau)$ over the grid.
@@ -149,7 +149,7 @@ Returns full $\Delta(\tau)$ over the grid.
 ### 4) Bootstrap confidence intervals
 
 ```{r}
-boot <- boot_rmst_delta(xA, xB, R = 300, seed = 1)
+boot <- bootrmstdelta(xA, xB, R = 300, seed = 1)
 ```
 
 Computes percentile confidence bands pointwise along the delta curve.
@@ -157,10 +157,10 @@ Computes percentile confidence bands pointwise along the delta curve.
 ## Visualization
 
 ```{r}
-plot_rmst_individual_by_group(res_all, group = x_all$group)
-plot_rmst_two_arms(xA, xB)
-plot_delta_curve(d$time, d$delta)
-plot_boot_curve(boot)
+plotrmstindividualbygroup(res_all, group = x_all$group)
+plotrmsttwoarms(xA, xB)
+plotdeltacurve(d$time, d$delta)
+plotbootcurve(boot)
 ```
 
 ## Relation to Existing RMST Workflows

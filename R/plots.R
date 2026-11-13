@@ -37,7 +37,7 @@
 
 #' Plot individual dynamic RMST curves by group
 #'
-#' @param res Result from [rmst_dynamic()] containing `individual` and `time`.
+#' @param res Result from [rmstdynamic()] containing `individual` and `time`.
 #' @param group Group vector aligned with rows of `res$individual`.
 #' @param n_show_per_group Maximum number of individual curves shown per group.
 #' @param title Plot title.
@@ -56,11 +56,11 @@
 #'   c(1.0, 0.85, 0.7)
 #' )
 #' grp <- c("A", "A", "B", "B")
-#' x <- as_survmat(S, time, group = grp)
-#' res <- rmst_dynamic(x)
-#' plot_rmst_individual_by_group(res, grp, n_show_per_group = 2)
+#' x <- assurvmat(S, time, group = grp)
+#' res <- rmstdynamic(x)
+#' plotrmstindividualbygroup(res, grp, n_show_per_group = 2)
 #' @export
-plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
+plotrmstindividualbygroup <- function(res, group, n_show_per_group = 30,
                                           title = "Individual dynamic RMST by group",
                                           x_scale = 1,
                                           y_scale = 1,
@@ -133,11 +133,11 @@ plot_rmst_individual_by_group <- function(res, group, n_show_per_group = 30,
 #' @return A `ggplot` object.
 #' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
 #' time <- c(0, 1, 2)
-#' xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
-#' xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
-#' plot_rmst_two_arms(xA, xB, labels = c("Control", "Treatment"))
+#' xA <- assurvmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+#' xB <- assurvmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+#' plotrmsttwoarms(xA, xB, labels = c("Control", "Treatment"))
 #' @export
-plot_rmst_two_arms <- function(xA, xB,
+plotrmsttwoarms <- function(xA, xB,
                                labels = c("Arm A", "Arm B"),
                                title = NULL,
                                xlab = "Time (tau)",
@@ -152,8 +152,8 @@ plot_rmst_two_arms <- function(xA, xB,
   stopifnot(length(xA$time) == length(xB$time), all(abs(xA$time - xB$time) < 1e-12))
   stopifnot(length(labels) == 2L, length(curve_colors) == 2L)
 
-  rA <- rmst_dynamic(xA, by = NULL)
-  rB <- rmst_dynamic(xB, by = NULL)
+  rA <- rmstdynamic(xA, by = NULL)
+  rB <- rmstdynamic(xB, by = NULL)
 
   df <- rbind(
     data.frame(
@@ -196,12 +196,12 @@ plot_rmst_two_arms <- function(xA, xB,
 #' @return A `ggplot` object.
 #' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
 #' time <- c(0, 1, 2)
-#' xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
-#' xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
-#' d <- rmst_delta(xA, xB)
-#' plot_delta_curve(d$time, d$delta)
+#' xA <- assurvmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+#' xB <- assurvmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+#' d <- rmstdelta(xA, xB)
+#' plotdeltacurve(d$time, d$delta)
 #' @export
-plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", ylab = "Delta",
+plotdeltacurve <- function(grid, delta, title = "Delta curve", xlab = "t", ylab = "Delta",
                              x_scale = 1, y_scale = 1, x_unit = NULL, y_unit = NULL) {
   .require_ggplot2()
   df <- data.frame(
@@ -220,7 +220,7 @@ plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", yla
 
 #' Plot bootstrap estimate with confidence ribbon
 #'
-#' @param boot List returned by [bootstrap_curve()] or [boot_rmst_delta()].
+#' @param boot List returned by [bootstrapcurve()] or [bootrmstdelta()].
 #' @param grid Optional x-axis grid. If omitted, uses `boot$time`.
 #' @param title Plot title.
 #' @param xlab X-axis label.
@@ -233,12 +233,12 @@ plot_delta_curve <- function(grid, delta, title = "Delta curve", xlab = "t", yla
 #' @return A `ggplot` object.
 #' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
 #' time <- c(0, 1, 2)
-#' xA <- as_survmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
-#' xB <- as_survmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
-#' boot <- boot_rmst_delta(xA, xB, R = 10, seed = 1)
-#' plot_boot_curve(boot)
+#' xA <- assurvmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
+#' xB <- assurvmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
+#' boot <- bootrmstdelta(xA, xB, R = 10, seed = 1)
+#' plotbootcurve(boot)
 #' @export
-plot_boot_curve <- function(boot, grid = NULL, title = "Bootstrap curve", xlab = "t", ylab = "estimate",
+plotbootcurve <- function(boot, grid = NULL, title = "Bootstrap curve", xlab = "t", ylab = "estimate",
                             x_scale = 1, y_scale = 1, x_unit = NULL, y_unit = NULL) {
   .require_ggplot2()
   if (is.null(grid)) {
