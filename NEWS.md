@@ -1,3 +1,7 @@
+# tvrmst 0.0.8
+
+- `as_survmat()` now validates that each row of `S` is a survival curve: values in `[0, 1]` and non-increasing over time (numerical tolerance `sqrt(.Machine$double.eps)`). It errors when `t = 0` is present with `S(0) != 1` instead of silently resetting it to 1.
+
 # tvrmst 0.0.7
 
 - `as_survmat()` now enforces a time grid starting at 0 with `S = 1`: it prepends `t = 0`, `S = 1` (with a message) when the grid starts after 0, and resets `S(0)` to 1 with a message otherwise.

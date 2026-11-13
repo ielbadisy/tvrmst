@@ -3,7 +3,12 @@
 #' The time grid must start at 0 with `S = 1` for every subject, since RMST is
 #' integrated from 0. If the grid starts after 0, a column `t = 0`, `S = 1` is
 #' prepended automatically and a message is emitted. If the grid starts at 0
-#' but some `S[, 1]` differ from 1, those values are set to 1 with a message.
+#' and some `S[, 1]` differ from 1, an error is raised: the input is not a
+#' valid survival curve and is not silently altered.
+#'
+#' Each row of `S` must be a valid survival curve: values in `[0, 1]` and
+#' non-increasing over time. Violations larger than a numerical tolerance of
+#' `sqrt(.Machine$double.eps)` are errors.
 #'
 #' @param S Numeric matrix of survival probabilities (rows = subjects, columns = time).
 #' @param time Numeric strictly increasing time grid with `length(time) == ncol(S)`.
@@ -25,16 +30,38 @@ as_survmat <- function(S, time, id = NULL, group = NULL) {
   stopifnot(is.matrix(S))
   stopifnot(is.numeric(time), length(time) == ncol(S))
   stopifnot(all(is.finite(time)), all(diff(time) > 0))
-  stopifnot(all(is.finite(S)))
-  stopifnot(all(S >= 0 & S <= 1))
-  stopifnot(all(time >= 0))
+  if (!all(is.finite(S))) stop("`S` must contain only finite values.", call. = FALSE)
+  if (any(time < 0)) stop("`time` must be non-negative.", call. = FALSE)
+
+  tol <- sqrt(.Machine$double.eps)
+  if (any(S < -tol | S > 1 + tol)) {
+    stop("`S` must lie in [0, 1].", call. = FALSE)
+  }
+  S <- pmin(pmax(S, 0), 1)
+
+  if (ncol(S) > 1) {
+    incr <- S[, -1, drop = FALSE] - S[, -ncol(S), drop = FALSE]
+    bad <- which(apply(incr > tol, 1, any))
+    if (length(bad)) {
+      stop(sprintf(
+        "`S` must be non-increasing over time; %d row(s) increase (first: row %d).",
+        length(bad), bad[1]
+      ), call. = FALSE)
+    }
+  }
 
   if (time[1] > 0) {
     message("Time grid does not start at 0: prepending t = 0 with S = 1.")
     time <- c(0, time)
     S <- cbind(1, S)
-  } else if (any(S[, 1] != 1)) {
-    message("S at t = 0 is not 1: setting S(0) = 1.")
+  } else {
+    bad0 <- which(abs(S[, 1] - 1) > tol)
+    if (length(bad0)) {
+      stop(sprintf(
+        "S(0) must equal 1 at t = 0; %d row(s) differ (first: row %d, S = %g).",
+        length(bad0), bad0[1], S[bad0[1], 1]
+      ), call. = FALSE)
+    }
     S[, 1] <- 1
   }
 

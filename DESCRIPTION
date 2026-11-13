@@ -1,7 +1,7 @@
 Package: tvrmst
 Type: Package
 Title: Time-Varying Restricted Mean Survival Time from Survival Matrices
-Version: 0.0.7
+Version: 0.0.8
 Authors@R: person(given = c("Imad"),
   family = "El Badisy",
   role = c("aut", "cre"),
