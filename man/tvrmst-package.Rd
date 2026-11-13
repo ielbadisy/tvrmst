@@ -7,8 +7,16 @@
 \description{
 Utilities for restricted mean survival time (RMST) and time-varying restricted mean survival time quantities computed from survival curves provided on a time grid. The package is model-agnostic and accepts only a time vector and survival matrices, returning RMST-based quantities and bootstrap summaries. For restricted mean survival time methodology, see Royston and Parmar (2013) \doi{10.1186/1471-2288-13-152}.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://CRAN.R-project.org/package=tvrmst}
+  \item Report bugs at \url{https://github.com/ielbadisy/tvrmst/issues}
+}
+
+}
 \author{
-\strong{Maintainer}: Imad EL BADISY \email{elbadisyimad@gmail.com}
+\strong{Maintainer}: Imad El Badisy \email{elbadisyimad@gmail.com}
 
 }
 \keyword{internal}

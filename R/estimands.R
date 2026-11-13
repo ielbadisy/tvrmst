@@ -57,7 +57,10 @@ rmst_dynamic <- function(x, tau = NULL, by = x$group) {
 
 #' Dynamic RMST difference between two arms
 #'
-#' Computes `Delta(tau) = RMST_B(tau) - RMST_A(tau)`.
+#' Computes `Delta(tau) = RMST_B(tau) - RMST_A(tau)`. The sign is B minus A:
+#' a positive value means arm B has the longer restricted mean survival time.
+#' Both arms must share the same time grid, which starts at 0 with `S = 1`
+#' (enforced by [as_survmat()]).
 #'
 #' @param xA A `survmat` object for arm A.
 #' @param xB A `survmat` object for arm B.

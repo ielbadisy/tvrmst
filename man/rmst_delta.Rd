@@ -17,7 +17,10 @@ rmst_delta(xA, xB, tau = NULL)
 A list with RMST curves for both arms and the delta curve.
 }
 \description{
-Computes \code{Delta(tau) = RMST_B(tau) - RMST_A(tau)}.
+Computes \code{Delta(tau) = RMST_B(tau) - RMST_A(tau)}. The sign is B minus A:
+a positive value means arm B has the longer restricted mean survival time.
+Both arms must share the same time grid, which starts at 0 with \code{S = 1}
+(enforced by \code{\link[=as_survmat]{as_survmat()}}).
 }
 \examples{
 time <- c(0, 1, 2)

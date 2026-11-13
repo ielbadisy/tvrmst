@@ -1,11 +1,17 @@
 #' Construct a survival matrix object
 #'
+#' The time grid must start at 0 with `S = 1` for every subject, since RMST is
+#' integrated from 0. If the grid starts after 0, a column `t = 0`, `S = 1` is
+#' prepended automatically and a message is emitted. If the grid starts at 0
+#' but some `S[, 1]` differ from 1, those values are set to 1 with a message.
+#'
 #' @param S Numeric matrix of survival probabilities (rows = subjects, columns = time).
 #' @param time Numeric strictly increasing time grid with `length(time) == ncol(S)`.
+#'   Must be non-negative; see Details on the grid at 0.
 #' @param id Optional subject identifiers. Defaults to `seq_len(nrow(S))`.
 #' @param group Optional group labels with length `nrow(S)`.
 #'
-#' @return An object of class `"survmat"`.
+#' @return An object of class `"survmat"`. Its time grid always starts at 0.
 #' @examples
 #' time <- c(0, 1, 2)
 #' S <- rbind(
@@ -21,6 +27,16 @@ as_survmat <- function(S, time, id = NULL, group = NULL) {
   stopifnot(all(is.finite(time)), all(diff(time) > 0))
   stopifnot(all(is.finite(S)))
   stopifnot(all(S >= 0 & S <= 1))
+  stopifnot(all(time >= 0))
+
+  if (time[1] > 0) {
+    message("Time grid does not start at 0: prepending t = 0 with S = 1.")
+    time <- c(0, time)
+    S <- cbind(1, S)
+  } else if (any(S[, 1] != 1)) {
+    message("S at t = 0 is not 1: setting S(0) = 1.")
+    S[, 1] <- 1
+  }
 
   n <- nrow(S)
 

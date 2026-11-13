@@ -44,6 +44,14 @@ bootstrap_curve <- function(est_fun, R = 300, conf = 0.95, seed = NULL, keep_rep
 
 #' Bootstrap CI for dynamic RMST delta curve
 #'
+#' Resamples subjects (rows) of the fixed prediction matrices `xA` and `xB`,
+#' conditional on the fitted model(s) that produced them. The resulting bands
+#' therefore reflect sampling variability of the predicted curves only, and do
+#' NOT capture model uncertainty (estimation of the model parameters). For
+#' valid inference, use a refit bootstrap: resample the original data, refit
+#' the model, recompute the survival matrices and [rmst_delta()] in each
+#' replicate, then take percentile limits of the replicated delta curves.
+#'
 #' @param xA A `survmat` object for arm A.
 #' @param xB A `survmat` object for arm B.
 #' @param R Number of bootstrap replicates.
