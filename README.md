@@ -1,7 +1,8 @@
 
 # tvrmst
 
-[![CRAN status](https://www.r-pkg.org/badges/version/tvrmst)](https://CRAN.R-project.org/package=tvrmst)
+[![CRAN
+status](https://www.r-pkg.org/badges/version/tvrmst)](https://CRAN.R-project.org/package=tvrmst)
 
 **Time-Varying Restricted Mean Survival Time from Survival Matrices**
 
@@ -75,37 +76,37 @@ grid.
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("your-username/tvrmst")
+remotes::install_github("ielbadisy/tvrmst")
 ```
 
 ## Core API
 
 ### Data structure
 
-- `as_survmat()`
-- `nobs_survmat()`
-- `bind_survmat()`
+- `assurvmat()`
+- `nobssurvmat()`
+- `bindsurvmat()`
 
 ### Estimands
 
-- `rmst_dynamic()`
-- `rmst_delta()`
+- `rmstdynamic()`
+- `rmstdelta()`
 
 ### Bootstrap
 
-- `bootstrap_curve()`
-- `boot_rmst_delta()`
+- `bootstrapcurve()`
+- `bootrmstdelta()`
 
 ### Visualization
 
-- `plot_rmst_individual_by_group()`
-- `plot_rmst_two_arms()`
-- `plot_delta_curve()`
-- `plot_boot_curve()`
+- `plotrmstindividualbygroup()`
+- `plotrmsttwoarms()`
+- `plotdeltacurve()`
+- `plotbootcurve()`
 
 ### Coercion helper
 
-- `as_survprob_matrix()`
+- `assurvprobmatrix()`
 
 ## Basic Workflow
 
@@ -125,15 +126,15 @@ lambdaB <- rexp(nB, rate = 0.15)
 S_A <- outer(lambdaA, time, function(l, t) exp(-l * t))
 S_B <- outer(lambdaB, time, function(l, t) exp(-l * t))
 
-xA <- as_survmat(S_A, time, group = rep("A", nA))
-xB <- as_survmat(S_B, time, group = rep("B", nB))
-x_all <- bind_survmat(xA, xB)
+xA <- assurvmat(S_A, time, group = rep("A", nA))
+xB <- assurvmat(S_B, time, group = rep("B", nB))
+x_all <- bindsurvmat(xA, xB)
 ```
 
 ### 2) Dynamic RMST
 
 ``` r
-res_all <- rmst_dynamic(x_all)
+res_all <- rmstdynamic(x_all)
 ```
 
 Key outputs:
@@ -145,7 +146,7 @@ Key outputs:
 ### 3) Two-arm contrast
 
 ``` r
-d <- rmst_delta(xA, xB)
+d <- rmstdelta(xA, xB)
 ```
 
 Returns full $\Delta(\tau)$ over the grid.
@@ -153,7 +154,7 @@ Returns full $\Delta(\tau)$ over the grid.
 ### 4) Bootstrap confidence intervals
 
 ``` r
-boot <- boot_rmst_delta(xA, xB, R = 300, seed = 1)
+boot <- bootrmstdelta(xA, xB, R = 300, seed = 1)
 ```
 
 Computes percentile confidence bands pointwise along the delta curve.
@@ -161,25 +162,25 @@ Computes percentile confidence bands pointwise along the delta curve.
 ## Visualization
 
 ``` r
-plot_rmst_individual_by_group(res_all, group = x_all$group)
+plotrmstindividualbygroup(res_all, group = x_all$group)
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
-plot_rmst_two_arms(xA, xB)
+plotrmsttwoarms(xA, xB)
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
 ``` r
-plot_delta_curve(d$time, d$delta)
+plotdeltacurve(d$time, d$delta)
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
 
 ``` r
-plot_boot_curve(boot)
+plotbootcurve(boot)
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-6-4.png)<!-- -->
@@ -200,6 +201,24 @@ This supports modern benchmarking and production survival pipelines.
 ``` r
 citation("tvrmst")
 ```
+
+    ## Warning in citation("tvrmst"): could not determine year for 'tvrmst' from
+    ## package DESCRIPTION file
+
+    ## To cite package 'tvrmst' in publications use:
+    ## 
+    ##   El Badisy I (????). _tvrmst: Time-Varying Restricted Mean Survival
+    ##   Time from Survival Matrices_. R package version 0.0.9,
+    ##   <https://CRAN.R-project.org/package=tvrmst>.
+    ## 
+    ## A BibTeX entry for LaTeX users is
+    ## 
+    ##   @Manual{,
+    ##     title = {tvrmst: Time-Varying Restricted Mean Survival Time from Survival Matrices},
+    ##     author = {Imad {El Badisy}},
+    ##     note = {R package version 0.0.9},
+    ##     url = {https://CRAN.R-project.org/package=tvrmst},
+    ##   }
 
 ## License
 

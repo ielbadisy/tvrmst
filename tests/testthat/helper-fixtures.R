@@ -11,9 +11,9 @@ make_final_scope_fixture <- function(seed = 123) {
   S_A <- outer(lambdaA, time, function(l, t) exp(-l * t))
   S_B <- outer(lambdaB, time, function(l, t) exp(-l * t))
 
-  xA <- as_survmat(S_A, time, group = rep("A", nA))
-  xB <- as_survmat(S_B, time, group = rep("B", nB))
-  x_all <- bind_survmat(xA, xB)
+  xA <- assurvmat(S_A, time, group = rep("A", nA))
+  xB <- assurvmat(S_B, time, group = rep("B", nB))
+  x_all <- bindsurvmat(xA, xB)
 
   list(
     time = time,

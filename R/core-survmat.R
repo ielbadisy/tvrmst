@@ -23,10 +23,10 @@
 #'   c(1.0, 0.8, 0.6),
 #'   c(1.0, 0.7, 0.5)
 #' )
-#' x <- as_survmat(S, time, group = c("A", "B"))
+#' x <- assurvmat(S, time, group = c("A", "B"))
 #' x
 #' @export
-as_survmat <- function(S, time, id = NULL, group = NULL) {
+assurvmat <- function(S, time, id = NULL, group = NULL) {
   stopifnot(is.matrix(S))
   stopifnot(is.numeric(time), length(time) == ncol(S))
   stopifnot(all(is.finite(time)), all(diff(time) > 0))
@@ -92,10 +92,10 @@ as_survmat <- function(S, time, id = NULL, group = NULL) {
 #'   c(1.0, 0.8, 0.6),
 #'   c(1.0, 0.7, 0.5)
 #' )
-#' x <- as_survmat(S, time)
-#' nobs_survmat(x)
+#' x <- assurvmat(S, time)
+#' nobssurvmat(x)
 #' @export
-nobs_survmat <- function(x) {
+nobssurvmat <- function(x) {
   stopifnot(inherits(x, "survmat"))
   nrow(x$S)
 }
@@ -107,12 +107,12 @@ nobs_survmat <- function(x) {
 #' @return A combined `survmat`.
 #' @examples
 #' time <- c(0, 1, 2)
-#' xA <- as_survmat(matrix(c(1.0, 0.9, 0.7), nrow = 1), time, group = "A")
-#' xB <- as_survmat(matrix(c(1.0, 0.8, 0.6), nrow = 1), time, group = "B")
-#' x <- bind_survmat(xA, xB)
-#' nobs_survmat(x)
+#' xA <- assurvmat(matrix(c(1.0, 0.9, 0.7), nrow = 1), time, group = "A")
+#' xB <- assurvmat(matrix(c(1.0, 0.8, 0.6), nrow = 1), time, group = "B")
+#' x <- bindsurvmat(xA, xB)
+#' nobssurvmat(x)
 #' @export
-bind_survmat <- function(...) {
+bindsurvmat <- function(...) {
   xs <- list(...)
   stopifnot(length(xs) >= 1)
   stopifnot(all(vapply(xs, inherits, logical(1), "survmat")))
@@ -130,5 +130,5 @@ bind_survmat <- function(...) {
     if (!is.null(z$group)) as.character(z$group) else rep("G", nrow(z$S))
   }))
 
-  as_survmat(S, time, id = seq_len(nrow(S)), group = group)
+  assurvmat(S, time, id = seq_len(nrow(S)), group = group)
 }

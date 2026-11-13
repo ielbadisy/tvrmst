@@ -10,9 +10,9 @@
 #'   t1 = c(0.8, 0.7),
 #'   t2 = c(0.6, 0.5)
 #' )
-#' as_survprob_matrix(pred)
+#' assurvprobmatrix(pred)
 #' @export
-as_survprob_matrix <- function(pred, times = NULL) {
+assurvprobmatrix <- function(pred, times = NULL) {
   if (is.matrix(pred)) return(pred)
 
   if (is.data.frame(pred)) {
