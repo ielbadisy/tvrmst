@@ -21,7 +21,13 @@ boot_rmst_delta(xA, xB, R = 300, conf = 0.95, seed = NULL)
 A list with point estimate and percentile confidence bands.
 }
 \description{
-Bootstrap CI for dynamic RMST delta curve
+Resamples subjects (rows) of the fixed prediction matrices \code{xA} and \code{xB},
+conditional on the fitted model(s) that produced them. The resulting bands
+therefore reflect sampling variability of the predicted curves only, and do
+NOT capture model uncertainty (estimation of the model parameters). For
+valid inference, use a refit bootstrap: resample the original data, refit
+the model, recompute the survival matrices and \code{\link[=rmst_delta]{rmst_delta()}} in each
+replicate, then take percentile limits of the replicated delta curves.
 }
 \examples{
 time <- c(0, 1, 2)

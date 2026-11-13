@@ -9,17 +9,21 @@ as_survmat(S, time, id = NULL, group = NULL)
 \arguments{
 \item{S}{Numeric matrix of survival probabilities (rows = subjects, columns = time).}
 
-\item{time}{Numeric strictly increasing time grid with \code{length(time) == ncol(S)}.}
+\item{time}{Numeric strictly increasing time grid with \code{length(time) == ncol(S)}.
+Must be non-negative; see Details on the grid at 0.}
 
 \item{id}{Optional subject identifiers. Defaults to \code{seq_len(nrow(S))}.}
 
 \item{group}{Optional group labels with length \code{nrow(S)}.}
 }
 \value{
-An object of class \code{"survmat"}.
+An object of class \code{"survmat"}. Its time grid always starts at 0.
 }
 \description{
-Construct a survival matrix object
+The time grid must start at 0 with \code{S = 1} for every subject, since RMST is
+integrated from 0. If the grid starts after 0, a column \code{t = 0}, \code{S = 1} is
+prepended automatically and a message is emitted. If the grid starts at 0
+but some \code{S[, 1]} differ from 1, those values are set to 1 with a message.
 }
 \examples{
 time <- c(0, 1, 2)

@@ -1,3 +1,10 @@
+# tvrmst 0.0.7
+
+- `as_survmat()` now enforces a time grid starting at 0 with `S = 1`: it prepends `t = 0`, `S = 1` (with a message) when the grid starts after 0, and resets `S(0)` to 1 with a message otherwise.
+- Documented that `boot_rmst_delta()` resamples fixed prediction matrices and does not capture model uncertainty; a refit bootstrap is recommended.
+- Documented the sign of `rmst_delta()` (B minus A).
+- Fixed author name casing ("El Badisy") in LICENSE and LICENSE.md.
+
 # tvrmst 0.0.6
 
 - Added `rmst_dynamic()` for individual dynamic RMST curves over the grid.

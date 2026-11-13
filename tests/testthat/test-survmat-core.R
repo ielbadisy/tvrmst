@@ -19,3 +19,19 @@ test_that("survmat constructors and binders behave correctly", {
   expect_equal(length(f$x_all$group), f$nA + f$nB)
   expect_true(all(levels(f$x_all$group) %in% c("A", "B")))
 })
+
+test_that("as_survmat prepends t = 0 with S = 1 and messages", {
+  expect_message(x <- as_survmat(rbind(c(0.9, 0.8)), c(1, 2)), "prepending")
+  expect_equal(x$time, c(0, 1, 2))
+  expect_equal(x$S[1, ], c(1, 0.9, 0.8))
+  expect_message(y <- as_survmat(rbind(c(0.95, 0.8)), c(0, 2)), "S\\(0\\) = 1")
+  expect_equal(y$S[1, 1], 1)
+  expect_silent(as_survmat(rbind(c(1, 0.8)), c(0, 2)))
+})
+
+test_that("rmst_delta is B minus A", {
+  time <- c(0, 1, 2)
+  xA <- as_survmat(rbind(c(1, 0.5, 0.2)), time)
+  xB <- as_survmat(rbind(c(1, 0.9, 0.8)), time)
+  expect_true(all(rmst_delta(xA, xB)$delta >= 0))
+})
