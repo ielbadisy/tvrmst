@@ -7,9 +7,10 @@
 bootrmstdelta(xA, xB, R = 300, conf = 0.95, seed = NULL)
 }
 \arguments{
-\item{xA}{A \code{survmat} object for arm A.}
+\item{xA}{A \code{survmat} object for arm A, or a survival matrix with a
+\code{"times"} attribute (see \code{\link[=rmstdynamic]{rmstdynamic()}}).}
 
-\item{xB}{A \code{survmat} object for arm B.}
+\item{xB}{As \code{xA}, for arm B.}
 
 \item{R}{Number of bootstrap replicates.}
 

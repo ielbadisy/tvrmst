@@ -21,3 +21,9 @@ resample_idx <- function(n, group = NULL) {
     }), use.names = FALSE)
   }
 }
+
+# Accept a survival matrix carrying its grid in attr "times" (e.g. survalis
+# survmat, which shares the class name but is a matrix, not a list).
+tosm <- function(x) {
+  if (is.matrix(x) && !is.null(attr(x, "times"))) assurvmat(x, attr(x, "times")) else x
+}

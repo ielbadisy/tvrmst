@@ -1,3 +1,7 @@
+# tvrmst 0.0.10
+
+* `rmstdynamic()`, `rmstdelta()`, `bootrmstdelta()`, `nobssurvmat()`, `bindsurvmat()` and `plotrmsttwoarms()` now also accept a numeric survival matrix carrying its grid in `attr(x, "times")`, such as the `survmat` matrix returned by survalis `predict()`. Before, this input failed because both packages use the class name `survmat`. `assurvmat()` now stores `S` as a plain numeric matrix.
+
 # tvrmst 0.0.9
 
 Exported functions are renamed to glued lowercase (no underscores). The old names remain as deprecated wrappers for one release (see `?"tvrmst-deprecated"`). The `survmat` class name is unchanged.

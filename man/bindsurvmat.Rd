@@ -7,7 +7,7 @@
 bindsurvmat(...)
 }
 \arguments{
-\item{...}{One or more \code{survmat} objects.}
+\item{...}{One or more \code{survmat} objects or survival matrices with a \code{"times"} attribute.}
 }
 \value{
 A combined \code{survmat}.

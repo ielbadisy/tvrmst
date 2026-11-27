@@ -37,7 +37,7 @@ assurvmat <- function(S, time, id = NULL, group = NULL) {
   if (any(S < -tol | S > 1 + tol)) {
     stop("`S` must lie in [0, 1].", call. = FALSE)
   }
-  S <- pmin(pmax(S, 0), 1)
+  S <- matrix(pmin(pmax(S, 0), 1), nrow(S))
 
   if (ncol(S) > 1) {
     incr <- S[, -1, drop = FALSE] - S[, -ncol(S), drop = FALSE]
@@ -83,7 +83,8 @@ assurvmat <- function(S, time, id = NULL, group = NULL) {
 
 #' Number of rows in a survmat
 #'
-#' @param x A `survmat` object.
+#' @param x A `survmat` object, or a survival matrix with a `"times"` attribute
+#'   (see [rmstdynamic()]).
 #'
 #' @return Number of subjects.
 #' @examples
@@ -96,13 +97,14 @@ assurvmat <- function(S, time, id = NULL, group = NULL) {
 #' nobssurvmat(x)
 #' @export
 nobssurvmat <- function(x) {
+  x <- tosm(x)
   stopifnot(inherits(x, "survmat"))
   nrow(x$S)
 }
 
 #' Row-bind survmat objects on a common time grid
 #'
-#' @param ... One or more `survmat` objects.
+#' @param ... One or more `survmat` objects or survival matrices with a `"times"` attribute.
 #'
 #' @return A combined `survmat`.
 #' @examples
@@ -113,7 +115,7 @@ nobssurvmat <- function(x) {
 #' nobssurvmat(x)
 #' @export
 bindsurvmat <- function(...) {
-  xs <- list(...)
+  xs <- lapply(list(...), tosm)
   stopifnot(length(xs) >= 1)
   stopifnot(all(vapply(xs, inherits, logical(1), "survmat")))
 
