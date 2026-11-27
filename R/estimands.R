@@ -2,7 +2,10 @@
 #'
 #' Computes `RMST_i(tau) = integral_0^tau S_i(u) du` over the provided grid.
 #'
-#' @param x A `survmat` object.
+#' @param x A `survmat` object, or a numeric survival matrix (rows = subjects,
+#'   columns = times) carrying its time grid in `attr(x, "times")`, such as the
+#'   output of `predict()` in survalis. A matrix is passed through [assurvmat()]
+#'   (no group).
 #' @param tau Optional numeric horizons for interpolation.
 #' @param by Optional grouping variable. Defaults to `x$group`.
 #'
@@ -19,6 +22,7 @@
 #' res$at_tau
 #' @export
 rmstdynamic <- function(x, tau = NULL, by = x$group) {
+  x <- tosm(x)
   stopifnot(inherits(x, "survmat"))
   time <- x$time
   ind <- trapz_cum(time, x$S)
@@ -62,8 +66,9 @@ rmstdynamic <- function(x, tau = NULL, by = x$group) {
 #' Both arms must share the same time grid, which starts at 0 with `S = 1`
 #' (enforced by [assurvmat()]).
 #'
-#' @param xA A `survmat` object for arm A.
-#' @param xB A `survmat` object for arm B.
+#' @param xA A `survmat` object for arm A, or a survival matrix with a
+#'   `"times"` attribute (see [rmstdynamic()]).
+#' @param xB As `xA`, for arm B.
 #' @param tau Optional numeric horizons for interpolation.
 #'
 #' @return A list with RMST curves for both arms and the delta curve.
@@ -74,6 +79,7 @@ rmstdynamic <- function(x, tau = NULL, by = x$group) {
 #' rmstdelta(xA, xB, tau = 1.5)$at_tau
 #' @export
 rmstdelta <- function(xA, xB, tau = NULL) {
+  xA <- tosm(xA); xB <- tosm(xB)
   stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
   stopifnot(length(xA$time) == length(xB$time), all(abs(xA$time - xB$time) < 1e-12))
 

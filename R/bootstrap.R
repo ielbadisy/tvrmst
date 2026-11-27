@@ -52,8 +52,9 @@ bootstrapcurve <- function(est_fun, R = 300, conf = 0.95, seed = NULL, keep_reps
 #' the model, recompute the survival matrices and [rmstdelta()] in each
 #' replicate, then take percentile limits of the replicated delta curves.
 #'
-#' @param xA A `survmat` object for arm A.
-#' @param xB A `survmat` object for arm B.
+#' @param xA A `survmat` object for arm A, or a survival matrix with a
+#'   `"times"` attribute (see [rmstdynamic()]).
+#' @param xB As `xA`, for arm B.
 #' @param R Number of bootstrap replicates.
 #' @param conf Confidence level in `(0, 1)`.
 #' @param seed Optional RNG seed.
@@ -67,6 +68,7 @@ bootstrapcurve <- function(est_fun, R = 300, conf = 0.95, seed = NULL, keep_reps
 #' boot$estimate
 #' @export
 bootrmstdelta <- function(xA, xB, R = 300, conf = 0.95, seed = NULL) {
+  xA <- tosm(xA); xB <- tosm(xB)
   stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
   time <- xA$time
 

@@ -118,8 +118,9 @@ plotrmstindividualbygroup <- function(res, group, n_show_per_group = 30,
 
 #' Plot mean RMST curves for two arms
 #'
-#' @param xA A `survmat` object for arm A.
-#' @param xB A `survmat` object for arm B.
+#' @param xA A `survmat` object for arm A, or a survival matrix with a
+#'   `"times"` attribute (see [rmstdynamic()]).
+#' @param xB As `xA`, for arm B.
 #' @param labels Two legend labels.
 #' @param title Plot title. Use `NULL` to omit it.
 #' @param xlab X-axis label.
@@ -148,6 +149,7 @@ plotrmsttwoarms <- function(xA, xB,
                                x_unit = NULL,
                                y_unit = NULL) {
   .require_ggplot2()
+  xA <- tosm(xA); xB <- tosm(xB)
   stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
   stopifnot(length(xA$time) == length(xB$time), all(abs(xA$time - xB$time) < 1e-12))
   stopifnot(length(labels) == 2L, length(curve_colors) == 2L)

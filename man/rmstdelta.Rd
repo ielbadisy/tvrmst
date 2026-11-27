@@ -7,9 +7,10 @@
 rmstdelta(xA, xB, tau = NULL)
 }
 \arguments{
-\item{xA}{A \code{survmat} object for arm A.}
+\item{xA}{A \code{survmat} object for arm A, or a survival matrix with a
+\code{"times"} attribute (see \code{\link[=rmstdynamic]{rmstdynamic()}}).}
 
-\item{xB}{A \code{survmat} object for arm B.}
+\item{xB}{As \code{xA}, for arm B.}
 
 \item{tau}{Optional numeric horizons for interpolation.}
 }

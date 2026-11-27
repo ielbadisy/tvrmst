@@ -7,7 +7,8 @@
 nobssurvmat(x)
 }
 \arguments{
-\item{x}{A \code{survmat} object.}
+\item{x}{A \code{survmat} object, or a survival matrix with a \code{"times"} attribute
+(see \code{\link[=rmstdynamic]{rmstdynamic()}}).}
 }
 \value{
 Number of subjects.

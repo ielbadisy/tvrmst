@@ -7,7 +7,10 @@
 rmstdynamic(x, tau = NULL, by = x$group)
 }
 \arguments{
-\item{x}{A \code{survmat} object.}
+\item{x}{A \code{survmat} object, or a numeric survival matrix (rows = subjects,
+columns = times) carrying its time grid in \code{attr(x, "times")}, such as the
+output of \code{predict()} in survalis. A matrix is passed through \code{\link[=assurvmat]{assurvmat()}}
+(no group).}
 
 \item{tau}{Optional numeric horizons for interpolation.}
 
