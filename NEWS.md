@@ -1,6 +1,7 @@
 # tvrmst 0.0.10
 
 * `rmstdynamic()`, `rmstdelta()`, `bootrmstdelta()`, `nobssurvmat()`, `bindsurvmat()` and `plotrmsttwoarms()` now also accept a numeric survival matrix carrying its grid in `attr(x, "times")`, such as the `survmat` matrix returned by survalis `predict()`. Before, this input failed because both packages use the class name `survmat`. `assurvmat()` now stores `S` as a plain numeric matrix.
+* `bootrmstdelta()` gains `paired`. With `paired = TRUE` (same subjects in both arms, e.g. counterfactual predictions), subjects are resampled jointly, keeping the within-subject correlation. The default `paired = FALSE` keeps the independent-arm resampling and its results.
 
 # tvrmst 0.0.9
 

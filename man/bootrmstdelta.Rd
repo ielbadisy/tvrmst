@@ -4,7 +4,7 @@
 \alias{bootrmstdelta}
 \title{Bootstrap CI for dynamic RMST delta curve}
 \usage{
-bootrmstdelta(xA, xB, R = 300, conf = 0.95, seed = NULL)
+bootrmstdelta(xA, xB, R = 300, conf = 0.95, seed = NULL, paired = FALSE)
 }
 \arguments{
 \item{xA}{A \code{survmat} object for arm A, or a survival matrix with a
@@ -17,6 +17,15 @@ bootrmstdelta(xA, xB, R = 300, conf = 0.95, seed = NULL)
 \item{conf}{Confidence level in \verb{(0, 1)}.}
 
 \item{seed}{Optional RNG seed.}
+
+\item{paired}{If \code{TRUE}, row \code{i} of \code{xA} and row \code{i} of \code{xB} are the same
+subject (e.g. counterfactual predictions of one sample under two
+treatments): subjects are resampled jointly, the same rows in both arms,
+which keeps the within-subject correlation of the two curves. Requires
+\code{nrow(xA) == nrow(xB)}; strata are taken from \code{xA$group}. If \code{FALSE} (the
+default, for arms of genuinely different subjects), the two arms are
+resampled independently. Using \code{FALSE} on paired curves ignores the
+covariance and gives too wide bands.}
 }
 \value{
 A list with point estimate and percentile confidence bands.
@@ -36,4 +45,5 @@ xA <- assurvmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", 
 xB <- assurvmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
 boot <- bootrmstdelta(xA, xB, R = 10, seed = 1)
 boot$estimate
+bootrmstdelta(xA, xB, R = 10, seed = 1, paired = TRUE)$lo
 }

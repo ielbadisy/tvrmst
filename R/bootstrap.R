@@ -58,6 +58,14 @@ bootstrapcurve <- function(est_fun, R = 300, conf = 0.95, seed = NULL, keep_reps
 #' @param R Number of bootstrap replicates.
 #' @param conf Confidence level in `(0, 1)`.
 #' @param seed Optional RNG seed.
+#' @param paired If `TRUE`, row `i` of `xA` and row `i` of `xB` are the same
+#'   subject (e.g. counterfactual predictions of one sample under two
+#'   treatments): subjects are resampled jointly, the same rows in both arms,
+#'   which keeps the within-subject correlation of the two curves. Requires
+#'   `nrow(xA) == nrow(xB)`; strata are taken from `xA$group`. If `FALSE` (the
+#'   default, for arms of genuinely different subjects), the two arms are
+#'   resampled independently. Using `FALSE` on paired curves ignores the
+#'   covariance and gives too wide bands.
 #'
 #' @return A list with point estimate and percentile confidence bands.
 #' @examples
@@ -66,10 +74,14 @@ bootstrapcurve <- function(est_fun, R = 300, conf = 0.95, seed = NULL, keep_reps
 #' xB <- assurvmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B", "B"))
 #' boot <- bootrmstdelta(xA, xB, R = 10, seed = 1)
 #' boot$estimate
+#' bootrmstdelta(xA, xB, R = 10, seed = 1, paired = TRUE)$lo
 #' @export
-bootrmstdelta <- function(xA, xB, R = 300, conf = 0.95, seed = NULL) {
+bootrmstdelta <- function(xA, xB, R = 300, conf = 0.95, seed = NULL, paired = FALSE) {
   xA <- tosm(xA); xB <- tosm(xB)
   stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
+  if (paired && nobssurvmat(xA) != nobssurvmat(xB)) {
+    stop("`paired = TRUE` needs the same number of rows in `xA` and `xB`.", call. = FALSE)
+  }
   time <- xA$time
 
   est_fun <- function(r) {
@@ -77,7 +89,7 @@ bootrmstdelta <- function(xA, xB, R = 300, conf = 0.95, seed = NULL) {
       rmstdelta(xA, xB)$delta
     } else {
       iA <- resample_idx(nobssurvmat(xA), xA$group)
-      iB <- resample_idx(nobssurvmat(xB), xB$group)
+      iB <- if (paired) iA else resample_idx(nobssurvmat(xB), xB$group)
       xA_b <- assurvmat(xA$S[iA, , drop = FALSE], time, group = xA$group[iA])
       xB_b <- assurvmat(xB$S[iB, , drop = FALSE], time, group = xB$group[iB])
       rmstdelta(xA_b, xB_b)$delta
