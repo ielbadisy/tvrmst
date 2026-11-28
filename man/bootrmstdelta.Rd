@@ -4,7 +4,17 @@
 \alias{bootrmstdelta}
 \title{Bootstrap CI for dynamic RMST delta curve}
 \usage{
-bootrmstdelta(xA, xB, R = 300, conf = 0.95, seed = NULL, paired = FALSE)
+bootrmstdelta(
+  xA,
+  xB,
+  R = 300,
+  conf = 0.95,
+  seed = NULL,
+  paired = FALSE,
+  estimand = c("cumulative", "window", "conditional"),
+  s = NULL,
+  w = NULL
+)
 }
 \arguments{
 \item{xA}{A \code{survmat} object for arm A, or a survival matrix with a
@@ -26,9 +36,16 @@ which keeps the within-subject correlation of the two curves. Requires
 default, for arms of genuinely different subjects), the two arms are
 resampled independently. Using \code{FALSE} on paired curves ignores the
 covariance and gives too wide bands.}
+
+\item{estimand}{\code{"cumulative"} (default, the curve of \code{\link[=rmstdelta]{rmstdelta()}}),
+\code{"window"} (\code{\link[=rmstwindowdelta]{rmstwindowdelta()}}) or \code{"conditional"} (\code{\link[=rmstconddelta]{rmstconddelta()}}).}
+
+\item{s, w}{Landmarks and window widths for the window and conditional
+estimands (see \code{\link[=rmstwindow]{rmstwindow()}}); ignored for \code{"cumulative"}.}
 }
 \value{
-A list with point estimate and percentile confidence bands.
+A list with point estimate and percentile confidence bands, and
+\code{time} (cumulative) or \code{windows} (window, conditional).
 }
 \description{
 Resamples subjects (rows) of the fixed prediction matrices \code{xA} and \code{xB},
@@ -46,4 +63,5 @@ xB <- assurvmat(rbind(c(1.0, 0.95, 0.8), c(1.0, 0.85, 0.7)), time, group = c("B"
 boot <- bootrmstdelta(xA, xB, R = 10, seed = 1)
 boot$estimate
 bootrmstdelta(xA, xB, R = 10, seed = 1, paired = TRUE)$lo
+bootrmstdelta(xA, xB, R = 10, seed = 1, estimand = "window", s = c(0, 1), w = 1)$estimate
 }

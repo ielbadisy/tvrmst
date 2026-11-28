@@ -66,8 +66,13 @@ bootstrapcurve <- function(est_fun, R = 300, conf = 0.95, seed = NULL, keep_reps
 #'   default, for arms of genuinely different subjects), the two arms are
 #'   resampled independently. Using `FALSE` on paired curves ignores the
 #'   covariance and gives too wide bands.
+#' @param estimand `"cumulative"` (default, the curve of [rmstdelta()]),
+#'   `"window"` ([rmstwindowdelta()]) or `"conditional"` ([rmstconddelta()]).
+#' @param s,w Landmarks and window widths for the window and conditional
+#'   estimands (see [rmstwindow()]); ignored for `"cumulative"`.
 #'
-#' @return A list with point estimate and percentile confidence bands.
+#' @return A list with point estimate and percentile confidence bands, and
+#'   `time` (cumulative) or `windows` (window, conditional).
 #' @examples
 #' time <- c(0, 1, 2)
 #' xA <- assurvmat(rbind(c(1.0, 0.9, 0.7), c(1.0, 0.8, 0.6)), time, group = c("A", "A"))
@@ -75,29 +80,36 @@ bootstrapcurve <- function(est_fun, R = 300, conf = 0.95, seed = NULL, keep_reps
 #' boot <- bootrmstdelta(xA, xB, R = 10, seed = 1)
 #' boot$estimate
 #' bootrmstdelta(xA, xB, R = 10, seed = 1, paired = TRUE)$lo
+#' bootrmstdelta(xA, xB, R = 10, seed = 1, estimand = "window", s = c(0, 1), w = 1)$estimate
 #' @export
-bootrmstdelta <- function(xA, xB, R = 300, conf = 0.95, seed = NULL, paired = FALSE) {
+bootrmstdelta <- function(xA, xB, R = 300, conf = 0.95, seed = NULL, paired = FALSE,
+                          estimand = c("cumulative", "window", "conditional"), s = NULL, w = NULL) {
+  estimand <- match.arg(estimand)
   xA <- tosm(xA); xB <- tosm(xB)
   stopifnot(inherits(xA, "survmat"), inherits(xB, "survmat"))
   if (paired && nobssurvmat(xA) != nobssurvmat(xB)) {
     stop("`paired = TRUE` needs the same number of rows in `xA` and `xB`.", call. = FALSE)
   }
   time <- xA$time
+  dfun <- switch(estimand,
+    cumulative = function(a, b) rmstdelta(a, b)$delta,
+    window = function(a, b) rmstwindowdelta(a, b, s, w)$delta,
+    conditional = function(a, b) rmstconddelta(a, b, s, w)$delta)
 
   est_fun <- function(r) {
     if (is.null(r)) {
-      rmstdelta(xA, xB)$delta
+      dfun(xA, xB)
     } else {
       iA <- resample_idx(nobssurvmat(xA), xA$group)
       iB <- if (paired) iA else resample_idx(nobssurvmat(xB), xB$group)
       xA_b <- assurvmat(xA$S[iA, , drop = FALSE], time, group = xA$group[iA])
       xB_b <- assurvmat(xB$S[iB, , drop = FALSE], time, group = xB$group[iB])
-      rmstdelta(xA_b, xB_b)$delta
+      dfun(xA_b, xB_b)
     }
   }
 
   out <- bootstrapcurve(est_fun, R = R, conf = conf, seed = seed)
-  out$time <- time
+  if (estimand == "cumulative") out$time <- time else out$windows <- wingrid(time, s, w)
   out$estimand <- "bootrmstdelta"
   out
 }
