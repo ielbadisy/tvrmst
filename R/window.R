@@ -87,7 +87,7 @@ win <- function(x, s, w, by, cond) {
   stopifnot(inherits(x, "survmat"))
   g <- wingrid(x$time, s, w)
   Ss <- survat(x$time, x$S, g$s)
-  W <- cumat(x$time, x$S, g$s + g$w) - cumat(x$time, x$S, g$s)
+  W <- winint(x$time, x$S, g$s, g$w)
   ind <- if (cond) W / Ss else W
   m <- function(idx) {
     Wm <- colMeans(W[idx, , drop = FALSE])
@@ -129,10 +129,14 @@ survat <- function(time, S, t) {
   S[, k, drop = FALSE] + sweep(S[, k1, drop = FALSE] - S[, k, drop = FALSE], 2, f, `*`)
 }
 
-# integral_0^t of linearly interpolated S, exact for the trapezoidal rule
-cumat <- function(time, S, t) {
-  k <- findInterval(t, time, rightmost.closed = TRUE)
-  R <- trapz_cum(time, S)
-  St <- survat(time, S, t)
-  R[, k, drop = FALSE] + sweep(S[, k, drop = FALSE] + St, 2, (t - time[k]) / 2, `*`)
+# integral_s^(s+w) of linearly interpolated S, by trapezoids on [s, grid points inside, s + w].
+# Integrating each window directly (not R(s + w) - R(s)) avoids cancellation when S(s) is tiny,
+# which matters for the conditional RMST W / S(s).
+winint <- function(time, S, s, w) {
+  matrix(vapply(seq_along(s), function(j) {
+    a <- s[j]; b <- a + w[j]; k <- which(time > a & time < b)
+    tt <- c(a, time[k], b)
+    Y <- cbind(survat(time, S, a), S[, k, drop = FALSE], survat(time, S, b))
+    drop((Y[, -1, drop = FALSE] + Y[, -ncol(Y), drop = FALSE]) %*% diff(tt)) / 2
+  }, numeric(nrow(S))), nrow(S))
 }
