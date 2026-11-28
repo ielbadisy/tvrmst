@@ -52,3 +52,9 @@ test_that("windows beyond the grid or with bad s, w are errors", {
   expect_error(rmstcond(f$xA, -1, 1), "s >= 0")
   expect_length(rmstwindow(f$xA, 4, 1)$mean, 1)
 })
+
+test_that("conditional RMST stays accurate when S(s) is tiny", {
+  time <- seq(0, 5, by = 0.01); l <- 20
+  r <- rmstcond(assurvmat(matrix(exp(-l * time), 1), time), c(1.5, 3), 1)
+  expect_lt(max(abs(r$individual / ((1 - exp(-l)) / l) - 1)), 0.01)
+})
